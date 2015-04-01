@@ -64,10 +64,11 @@ int init_my_assembler(void)
 	int result;
 
 	if((result = init_inst_file("inst.data")) < 0 )
-		return -1 ;
-	if((result = init_input_file("input")) < 0 )
-		return -1 ; 
-	return result ; 
+		return -1;
+	if((result = init_input_file("input.txt")) < 0 )
+		return -1; 
+
+	return result; 
 }
 
 /* -----------------------------------------------------------------------------------
@@ -86,8 +87,44 @@ int init_my_assembler(void)
 
 static int assem_pass1(void)
 {
-	/* add your code here */
+	for( int i = 0; i < line_num; i++ ) {
+		if(token_parsing(i) < 0) {
+			return -1;
+		}
+	}
 
+	for( int i = 0; i < line_num; i ++ ) {
+		token *curr_token = token_table[i];
+		if( curr_token->operator == NULL ) {
+			continue;
+		}
+
+		int instruction_number = search_opcode( curr_token->operator );
+		if( instruction_number < 0 ) {
+			if( is_assembly_directive(curr_token->operator) ) {
+				printf("%s\t", curr_token->label);
+				printf("%s\t", curr_token->operator);
+				printf("%8s\t\n", curr_token->operand[0]);
+			} else {
+				// error!
+			}
+			continue;
+		}
+
+		int opcode = get_opcode_of_instruction(instruction_number);
+
+		if( curr_token->label ) {
+			printf("%s\t", curr_token->label);
+		} else {
+			printf("%6s\t", "");
+		}
+
+		printf("%s\t", curr_token->operator);
+		printf("%8s\t", curr_token->operand[0]);
+		printf("0x%02x\n", opcode);
+	}
+
+	return -1;
 }
 
 /* -----------------------------------------------------------------------------------
@@ -103,9 +140,8 @@ static int assem_pass1(void)
 
 static int assem_pass2(void)
 {
-
 	/* add your code here */
-
+	return -1;
 }
 /* -----------------------------------------------------------------------------------
  * 설명 : 머신을 위한 기계 코드목록 파일을 읽어 기계어 목록 테이블(inst_table)을 
@@ -129,14 +165,30 @@ int init_inst_file(char *inst_file)
 	}
 
 	char line[MAX_LENGTH_OPCODE_TABLE];
-	char name[MAX_LENGTH_OPCODE_NULL];
-	int format;
-	int code;
-	int num_of_operand;
 	while( fgets( line, MAX_LENGTH_OPCODE_TABLE, fp ) ) {
-		sscanf(line, "%s %d %x %d", name, &format, &code, &num_of_operand);
+		char name[MAX_LENGTH_OPCODE_NAME_NULL] = {0, };
+		char format[8] = {0, };
+		int code;
+		int num_of_operand;
+		sscanf(line, "%s %s %x %d", name, format, &code, &num_of_operand);
+
+		char **curr = inst[inst_num];
+		
+		// 이름 넣고
+		curr[OPCODE_COLUMN_NAME] = strdup(name);
+		// format 정보 넣고
+		curr[OPCODE_COLUMN_FORMAT] = strdup(format);
+
+		// opcode 값 넣고
+		curr[OPCODE_COLUMN_CODE] = (char*)malloc( sizeof(char) );
+		*curr[OPCODE_COLUMN_CODE] = (char)code;
+
+		// operand 갯수 넣고
+		curr[OPCODE_COLUMN_NUM_OF_OPERAND] = (char*)malloc( sizeof(char) );
+		*curr[OPCODE_COLUMN_NUM_OF_OPERAND] = (char)num_of_operand;
 
 		memset(line, 0, strlen(line));
+		inst_num++;
 	}
 
 	return 0;
@@ -150,8 +202,6 @@ int init_inst_file(char *inst_file)
  *		
  * -----------------------------------------------------------------------------------
  */
-
-
 int init_input_file(char *input_file)
 {
 	FILE *fp = fopen(input_file, "r");
@@ -162,11 +212,14 @@ int init_input_file(char *input_file)
 	char line[MAX_LENGTH_INSTRUCTION_LINE];
 	line_num = 0;
 	while( fgets( line, MAX_LENGTH_INSTRUCTION_LINE, fp ) ) {
-		char *str = (char*)malloc(sizeof(char) * strlen(line));
+		char *str = (char*)malloc(sizeof(char) * (strlen(line) + 1));
 		strncpy(str, line, MAX_LENGTH_INSTRUCTION_LINE);
 		input_data[line_num++] = str;
 
-		memset(line, 0, strlen(line));
+		// 개행문자 없앰
+		str[strlen(str) - 2] = '\0';
+
+		memset(line, 0, MAX_LENGTH_INSTRUCTION_LINE);
 	}
 
 	return 0;
@@ -181,9 +234,49 @@ int init_input_file(char *input_file)
  * -----------------------------------------------------------------------------------
  */
 
-int token_parsing(int index) 
+int token_parsing(int index)
 {
-	/* add your code here */
+	char *line = input_data[index];
+	if( line == NULL ) {
+		return -1;
+	}
+
+	token_table[index] = (token*)malloc( sizeof(token) );
+	token *curr_token = token_table[index];
+	curr_token->label = NULL;
+	curr_token->operator = NULL;
+	for( int i = 0; i < MAX_OPERAND; i ++ ) {
+		curr_token->operand[i] = NULL;
+	}
+	curr_token->comment = NULL;
+
+	// 먼저 comment 빼냄
+	if( line[0] == '.' ) {
+		curr_token->comment = (char*)malloc( sizeof(char) * strlen(line) );
+		strcpy(curr_token->comment, line);
+		return 0;
+	}
+
+	// Label 존재 판단 기준 : 첫 번째 문자가 \t
+	char label[MAX_LENGTH_LABEL_NULL] = { 0, };
+	char operator[MAX_LENGTH_OPCODE_NAME_NULL] = { 0, };
+	char operand[MAX_LENGTH_OPERAND_NULL] = { 0, };
+	char comment[MAX_LENGTH_INSTRUCTION_LINE] = { 0, };
+	if( line[0] == '\t' ) {
+		sscanf(line, "%s %s %s", operator, operand, comment);
+	} else {
+		sscanf(line, "%s %s %s %s", label, operator, operand, comment);
+		curr_token->label = strdup(label);
+	}
+
+	// opcode name 복사
+	curr_token->operator = strdup(operator);
+	// // 일단 operand 통째로 0번째 인덱스에 복사해넣게 함
+	curr_token->operand[0] = strdup(operand);
+	// // comment 복사(아직 한 단어 밖에 인식 안되지만 그래도....)
+	curr_token->comment = strdup(comment);
+
+	return 0;
 }
 /* -----------------------------------------------------------------------------------
  * 설명 : 입력 문자열이 기계어 코드인지를 검사하는 함수이다. 
@@ -199,6 +292,7 @@ int search_opcode(char *str)
 	for( int i = 0; i < inst_num; i ++ ) {
 		// 일단 컬럼 가져오고
 		char *name = inst[i][OPCODE_COLUMN_NAME];
+		// 이름 같으면 인덱스 리턴
 		if( strcmp(name, str) == 0 ) {
 			return i;
 		}
@@ -206,6 +300,7 @@ int search_opcode(char *str)
 
 	return -1;
 }
+
 /* -----------------------------------------------------------------------------------
  * 설명 : 입력된 문자열의 이름을 가진 파일에 프로그램의 결과를 저장하는 함수이다. 
  * 매계 : 생성할 오브젝트 파일명 
@@ -229,4 +324,29 @@ void make_objectcode(char *file_name)
 		// error!
 		return;
 	}
+}
+
+
+//
+// my functions
+//
+int get_opcode_of_instruction(int i) {
+	char **curr = inst[i];
+	// 오른쪽에서 두 번째 16진수 수의 맨 앞 비트가 1이면 앞 부분이 모두 1로 채워지는 문제 해결
+	return 0x000000FF & *curr[OPCODE_COLUMN_CODE];
+}
+
+int get_num_of_operand_of_instruction(int i) {
+	char **curr = inst[i];
+	// 오른쪽에서 두 번째 16진수 수의 맨 앞 비트가 1이면 앞 부분이 모두 1로 채워지는 문제 해결
+	return 0x000000FF & *curr[OPCODE_COLUMN_NUM_OF_OPERAND];
+}
+
+int is_assembly_directive(const char* opcode) {
+	return strcmp(opcode, ASSEMBLY_DIRECTIVE_START_STRING) == 0
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_END_STRING) == 0
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_BYTE_STRING) == 0
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_WORD_STRING) == 0
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_RESB_STRING) == 0
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_RESW_STRING) == 0;
 }
