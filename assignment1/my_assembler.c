@@ -121,7 +121,7 @@ static int assem_pass1(void)
 
 		printf("%s\t", curr_token->operator);
 		printf("%8s\t", curr_token->operand[0]);
-		printf("0x%02x\n", opcode);
+		printf("0x%02X\n", opcode);
 	}
 
 	return -1;
