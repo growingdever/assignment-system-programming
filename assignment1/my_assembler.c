@@ -65,7 +65,7 @@ int init_my_assembler(void)
 
 	if((result = init_inst_file("inst.data")) < 0 )
 		return -1;
-	if((result = init_input_file("input.txt")) < 0 )
+	if((result = init_input_file("program_in.txt")) < 0 )
 		return -1; 
 
 	return result; 
@@ -217,7 +217,8 @@ int init_input_file(char *input_file)
 		input_data[line_num++] = str;
 
 		// 개행문자 없앰
-		str[strlen(str) - 2] = '\0';
+		int last = strlen(str) - 1;
+		str[last] = '\0';
 
 		memset(line, 0, MAX_LENGTH_INSTRUCTION_LINE);
 	}
@@ -262,7 +263,7 @@ int token_parsing(int index)
 	char operator[MAX_LENGTH_OPCODE_NAME_NULL] = { 0, };
 	char operand[MAX_LENGTH_OPERAND_NULL] = { 0, };
 	char comment[MAX_LENGTH_INSTRUCTION_LINE] = { 0, };
-	if( line[0] == '\t' ) {
+	if( line[0] == ' ' ) {
 		sscanf(line, "%s %s %s", operator, operand, comment);
 	} else {
 		sscanf(line, "%s %s %s %s", label, operator, operand, comment);
