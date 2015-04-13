@@ -301,9 +301,8 @@ void make_token(const char* label,
 	}
 	// opcode name 복사
 	curr_token->operator = strdup(operator);
-	// // 일단 operand 통째로 0번째 인덱스에 복사해넣게 함
+	// operand 부분 토크나이징 해서 넣음
 	tokenizing_operand(operand, curr_token->operand);
-	// curr_token->operand[0] = strdup(operand);
 	// // comment 복사(아직 한 단어 밖에 인식 안되지만 그래도....)
 	curr_token->comment = strdup(comment);
 }
