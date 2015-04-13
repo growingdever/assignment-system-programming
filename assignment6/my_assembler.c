@@ -104,9 +104,9 @@ static int assem_pass1(void)
 		int instruction_number = search_opcode( curr_token->operator );
 		if( instruction_number < 0 ) {
 			if( is_assembly_directive(curr_token->operator) ) {
-				printf("%s\t", curr_token->label);
-				printf("%s\t", curr_token->operator);
-				printf("%8s\t\n", curr_token->operand[0]);
+				// printf("%s\t", curr_token->label);
+				// printf("%s\t", curr_token->operator);
+				// printf("%8s\t\n", curr_token->operand[0]);
 			} else {
 				// error!
 			}
@@ -116,14 +116,14 @@ static int assem_pass1(void)
 		int opcode = get_opcode_of_instruction(instruction_number);
 
 		if( curr_token->label ) {
-			printf("%s\t", curr_token->label);
+			// printf("%s\t", curr_token->label);
 		} else {
-			printf("%6s\t", "");
+			// printf("%6s\t", "");
 		}
 
-		printf("%s\t", curr_token->operator);
-		printf("%8s\t", curr_token->operand[0]);
-		printf("0x%02X\n", opcode);
+		// printf("%s\t", curr_token->operator);
+		// printf("%8s\t", curr_token->operand[0]);
+		// printf("0x%02X\n", opcode);
 	}
 
 	return -1;
@@ -247,17 +247,8 @@ int token_parsing(int index)
 
 	// comment 라인은 comment만 복사해서 넣고 끝냄
 	if( line[0] == '.' ) {
-		token_table[token_line] = (token*)malloc( sizeof(token) );
-		token *curr_token = token_table[token_line];
-		token_line++;
-
-		curr_token->label = NULL;
-		curr_token->operator = NULL;
-		for( int i = 0; i < MAX_OPERAND; i ++ ) {
-			curr_token->operand[i] = NULL;
-		}
+		token* curr_token = malloc_token();
 		curr_token->comment = strdup(line);
-
 		return 0;
 	}
 
@@ -273,12 +264,17 @@ int token_parsing(int index)
 		sscanf(line, "%s %s %s %s", label, operator, operand, comment);
 	}
 
-	printf("%s %s %s %s\n", label, operator, operand, comment);
+	// printf("%s %s %s %s\n", label, operator, operand, comment);
 	if( is_assembly_directive(operator) ) {
 		token_parsing_assembly_directive(line);
-		return 0;
+	} else {
+		make_token(label, operator, operand, comment);
 	}
 
+	return 0;
+}
+
+token* malloc_token() {
 	token_table[token_line] = (token*)malloc( sizeof(token) );
 	token *curr_token = token_table[token_line];
 	token_line++;
@@ -290,6 +286,15 @@ int token_parsing(int index)
 	}
 	curr_token->comment = NULL;
 
+	return curr_token;
+}
+
+void make_token(const char* label, 
+	const char* operator, 
+	const char* operand, 
+	const char* comment) {
+	token* curr_token = malloc_token();
+
 	// 레이블이 있으면 복사
 	if( strlen(label) > 0 ) {
 		curr_token->label = strdup(label);
@@ -297,15 +302,71 @@ int token_parsing(int index)
 	// opcode name 복사
 	curr_token->operator = strdup(operator);
 	// // 일단 operand 통째로 0번째 인덱스에 복사해넣게 함
-	curr_token->operand[0] = strdup(operand);
+	tokenizing_operand(operand, curr_token->operand);
+	// curr_token->operand[0] = strdup(operand);
 	// // comment 복사(아직 한 단어 밖에 인식 안되지만 그래도....)
 	curr_token->comment = strdup(comment);
-
-	return 0;
 }
 
 void token_parsing_assembly_directive(const char* line) {
-	
+	char label[MAX_LENGTH_LABEL_NULL] = { 0, };
+	char operator[MAX_LENGTH_OPCODE_NAME_NULL] = { 0, };
+	char operand[MAX_LENGTH_INSTRUCTION_LINE] = { 0, };
+	char comment[MAX_LENGTH_INSTRUCTION_LINE] = { 0, };
+
+	// 첫 번째 문자가 공백 == 레이블 없음
+	if( line[0] == ' ' ) {
+		sscanf(line, "%s %s %s", operator, operand, comment);
+	} else {
+		sscanf(line, "%s %s %s %s", label, operator, operand, comment);
+	}
+
+	token* curr_token = malloc_token();
+
+	if( strcmp(operator, ASSEMBLY_DIRECTIVE_EXTDEF_STRING) == 0 ) {
+		make_token(label, operator, operand, comment);
+	} else if( strcmp(operator, ASSEMBLY_DIRECTIVE_EXTREF_STRING) == 0 ) {
+		make_token(label, operator, operand, comment);
+	}
+}
+
+void tokenizing_operand(const char* operand, char* target[MAX_OPERAND]) {
+	int num_of_operand = get_num_of_operand(operand);
+	if( num_of_operand == 1 ) {
+		target[0] = strdup(operand);
+		return;
+	}
+
+	char *str = strdup(operand);
+	int index = 0;
+
+	char *ptr = strtok(str, ",");
+	target[index++] = strdup(ptr);
+	printf("%s ", ptr);
+	while(1) {
+		ptr = strtok(NULL, ",");
+		if( ptr == NULL ) {
+			break;
+		}
+
+		target[index++] = strdup(ptr);
+		printf("%s ", ptr);
+	}
+
+	printf("\n");
+	free(str);
+}
+
+int get_num_of_operand(const char* operand) {
+	int count = 1;
+	unsigned int length = strlen(operand);
+	for( int i = 0; i < length; i ++ ) {
+		if( operand[i] == ',' ) {
+			count++;
+		}
+	}
+
+	return count;
 }
 /* -----------------------------------------------------------------------------------
  * 설명 : 입력 문자열이 기계어 코드인지를 검사하는 함수이다. 

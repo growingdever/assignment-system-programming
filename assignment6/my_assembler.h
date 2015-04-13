@@ -103,4 +103,11 @@ int token_parsing(int index);
 int get_opcode_of_instruction(int i);
 int get_num_of_operand_of_instruction(int i);
 int is_assembly_directive(const char* opcode);
+token* malloc_token();
+void make_token(const char* label, 
+	const char* operator, 
+	const char* operand, 
+	const char* comment);
 void token_parsing_assembly_directive(const char* line);
+void tokenizing_operand(const char* operand, char* target[MAX_OPERAND]);
+int get_num_of_operand(const char* operand);
