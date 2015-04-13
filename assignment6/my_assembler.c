@@ -63,9 +63,9 @@ int init_my_assembler(void)
 {
 	int result;
 
-	if((result = init_inst_file("inst.data")) < 0 )
+	if((result = init_inst_file(INSTRUCTION_TABLE_FILE_PATH)) < 0 )
 		return -1;
-	if((result = init_input_file("program_in.txt")) < 0 )
+	if((result = init_input_file(INPUT_FILE_PATH)) < 0 )
 		return -1; 
 
 	return result; 
@@ -93,7 +93,9 @@ static int assem_pass1(void)
 		}
 	}
 
-	for( int i = 0; i < line_num; i ++ ) {
+	printf("parsing complete\n");
+
+	for( int i = 0; i < token_line; i ++ ) {
 		token *curr_token = token_table[i];
 		if( curr_token->operator == NULL ) {
 			continue;
@@ -238,13 +240,49 @@ int init_input_file(char *path)
 
 int token_parsing(int index)
 {
-	char *line = input_data[index];
+	const char *line = input_data[index];
 	if( line == NULL ) {
 		return -1;
 	}
 
-	token_table[index] = (token*)malloc( sizeof(token) );
-	token *curr_token = token_table[index];
+	// comment 라인은 comment만 복사해서 넣고 끝냄
+	if( line[0] == '.' ) {
+		token_table[token_line] = (token*)malloc( sizeof(token) );
+		token *curr_token = token_table[token_line];
+		token_line++;
+
+		curr_token->label = NULL;
+		curr_token->operator = NULL;
+		for( int i = 0; i < MAX_OPERAND; i ++ ) {
+			curr_token->operand[i] = NULL;
+		}
+		curr_token->comment = strdup(line);
+
+		return 0;
+	}
+
+	char label[MAX_LENGTH_LABEL_NULL] = { 0, };
+	char operator[MAX_LENGTH_OPCODE_NAME_NULL] = { 0, };
+	char operand[MAX_LENGTH_INSTRUCTION_LINE] = { 0, };
+	char comment[MAX_LENGTH_INSTRUCTION_LINE] = { 0, };
+
+	// 첫 번째 문자가 공백 == 레이블 없음
+	if( line[0] == ' ' ) {
+		sscanf(line, "%s %s %s", operator, operand, comment);
+	} else {
+		sscanf(line, "%s %s %s %s", label, operator, operand, comment);
+	}
+
+	printf("%s %s %s %s\n", label, operator, operand, comment);
+	if( is_assembly_directive(operator) ) {
+		token_parsing_assembly_directive(line);
+		return 0;
+	}
+
+	token_table[token_line] = (token*)malloc( sizeof(token) );
+	token *curr_token = token_table[token_line];
+	token_line++;
+
 	curr_token->label = NULL;
 	curr_token->operator = NULL;
 	for( int i = 0; i < MAX_OPERAND; i ++ ) {
@@ -252,27 +290,10 @@ int token_parsing(int index)
 	}
 	curr_token->comment = NULL;
 
-	// 먼저 comment 빼냄
-	if( line[0] == '.' ) {
-		curr_token->comment = (char*)malloc( sizeof(char) * strlen(line) );
-		strcpy(curr_token->comment, line);
-		return 0;
-	}
-
-	// Label 존재 판단 기준 : 첫 번째 문자가 \t
-	char label[MAX_LENGTH_LABEL_NULL] = { 0, };
-	char operator[MAX_LENGTH_OPCODE_NAME_NULL] = { 0, };
-	char operand[MAX_LENGTH_OPERAND_NULL] = { 0, };
-	char comment[MAX_LENGTH_INSTRUCTION_LINE] = { 0, };
-	if( line[0] == ' ' ) {
-		sscanf(line, "%s %s %s", operator, operand, comment);
-	} else {
-		sscanf(line, "%s %s %s %s", label, operator, operand, comment);
+	// 레이블이 있으면 복사
+	if( strlen(label) > 0 ) {
 		curr_token->label = strdup(label);
 	}
-
-	printf("%s %s %s %s\n", label, operator, operand, comment);
-
 	// opcode name 복사
 	curr_token->operator = strdup(operator);
 	// // 일단 operand 통째로 0번째 인덱스에 복사해넣게 함
@@ -281,6 +302,10 @@ int token_parsing(int index)
 	curr_token->comment = strdup(comment);
 
 	return 0;
+}
+
+void token_parsing_assembly_directive(const char* line) {
+	
 }
 /* -----------------------------------------------------------------------------------
  * 설명 : 입력 문자열이 기계어 코드인지를 검사하는 함수이다. 
@@ -352,5 +377,7 @@ int is_assembly_directive(const char* opcode) {
 		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_BYTE_STRING) == 0
 		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_WORD_STRING) == 0
 		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_RESB_STRING) == 0
-		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_RESW_STRING) == 0;
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_RESW_STRING) == 0
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_EXTDEF_STRING) == 0
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_EXTREF_STRING) == 0;
 }

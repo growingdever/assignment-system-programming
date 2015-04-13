@@ -28,6 +28,11 @@
 #define ASSEMBLY_DIRECTIVE_WORD_STRING "WORD"
 #define ASSEMBLY_DIRECTIVE_RESB_STRING "RESB"
 #define ASSEMBLY_DIRECTIVE_RESW_STRING "RESW"
+#define ASSEMBLY_DIRECTIVE_EXTDEF_STRING "EXTDEF"
+#define ASSEMBLY_DIRECTIVE_EXTREF_STRING "EXTREF"
+
+#define INSTRUCTION_TABLE_FILE_PATH "inst.data"
+#define INPUT_FILE_PATH "program_in.txt"
 
 
 
@@ -98,3 +103,4 @@ int token_parsing(int index);
 int get_opcode_of_instruction(int i);
 int get_num_of_operand_of_instruction(int i);
 int is_assembly_directive(const char* opcode);
+void token_parsing_assembly_directive(const char* line);
