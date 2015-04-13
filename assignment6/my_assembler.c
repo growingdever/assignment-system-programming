@@ -320,8 +320,6 @@ void token_parsing_assembly_directive(const char* line) {
 		sscanf(line, "%s %s %s %s", label, operator, operand, comment);
 	}
 
-	token* curr_token = malloc_token();
-
 	if( strcmp(operator, ASSEMBLY_DIRECTIVE_EXTDEF_STRING) == 0 ) {
 		make_token(label, operator, operand, comment);
 	} else if( strcmp(operator, ASSEMBLY_DIRECTIVE_EXTREF_STRING) == 0 ) {
