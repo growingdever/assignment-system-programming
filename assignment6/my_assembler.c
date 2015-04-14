@@ -381,7 +381,6 @@ void tokenizing_operand(const char* operand, char* target[MAX_OPERAND]) {
 
 	char *ptr = strtok(str, ",");
 	target[index++] = strdup(ptr);
-	printf("%s ", ptr);
 	while(1) {
 		ptr = strtok(NULL, ",");
 		if( ptr == NULL ) {
@@ -389,10 +388,8 @@ void tokenizing_operand(const char* operand, char* target[MAX_OPERAND]) {
 		}
 
 		target[index++] = strdup(ptr);
-		printf("%s ", ptr);
 	}
 
-	printf("\n");
 	free(str);
 }
 
