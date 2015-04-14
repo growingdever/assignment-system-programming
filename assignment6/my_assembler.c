@@ -322,12 +322,29 @@ void make_token(const char* label,
 		symbol_num++;
 	}
 
-	if( is_assembly_directive(operator) ) {
+	locctr += increase_locctr_by_opcode(curr_token);
+}
 
+int increase_locctr_by_opcode(const token* tk) {
+	const char *opcode = tk->operator;
+	int size = 0;
+	if( is_assembly_directive_affect_locctr(opcode) ) {
+		if( strcmp(opcode, ASSEMBLY_DIRECTIVE_BYTE_STRING) == 0 ) {
+			size = 1;
+		} else if( strcmp(opcode, ASSEMBLY_DIRECTIVE_WORD_STRING) == 0 ) {
+			size = 3;
+		} else if( strcmp(opcode, ASSEMBLY_DIRECTIVE_RESB_STRING) == 0 ) {
+			size = atoi(tk->operand[0]);
+		} else if( strcmp(opcode, ASSEMBLY_DIRECTIVE_RESW_STRING) == 0 ) {
+			size = atoi(tk->operand[0]) * SIZE_WORD_BY_BYTE;
+		}
 	} else {
-		int instruction_size = get_instruction_size(operator);
-		locctr += instruction_size;
+		if( ! is_assembly_directive(opcode) ) {
+			size = get_instruction_size(opcode);
+		}
 	}
+
+	return size;
 }
 
 void token_parsing_assembly_directive(const char* line) {
@@ -342,6 +359,8 @@ void token_parsing_assembly_directive(const char* line) {
 	} else {
 		sscanf(line, "%s %s %s %s", label, operator, operand, comment);
 	}
+
+	make_token(label, operator, operand, comment);
 
 	if( strcmp(operator, ASSEMBLY_DIRECTIVE_EXTDEF_STRING) == 0 ) {
 		// make_token(label, operator, operand, comment);
@@ -481,5 +500,13 @@ int is_assembly_directive(const char* opcode) {
 		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_RESB_STRING) == 0
 		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_RESW_STRING) == 0
 		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_EXTDEF_STRING) == 0
-		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_EXTREF_STRING) == 0;
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_EXTREF_STRING) == 0
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_CSECT_STRING) == 0;
+}
+
+int is_assembly_directive_affect_locctr(const char* opcode) {
+	return strcmp(opcode, ASSEMBLY_DIRECTIVE_BYTE_STRING) == 0
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_WORD_STRING) == 0
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_RESB_STRING) == 0
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_RESW_STRING) == 0;
 }

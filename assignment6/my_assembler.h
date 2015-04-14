@@ -106,11 +106,13 @@ int get_opcode_of_instruction(int i);
 int get_num_of_operand_of_instruction(int i);
 int get_instruction_size(const char* operator);
 int is_assembly_directive(const char* opcode);
+int is_assembly_directive_affect_locctr(const char* opcode);
 token* malloc_token();
 void make_token(const char* label, 
 	const char* operator, 
 	const char* operand, 
 	const char* comment);
+int increase_locctr_by_opcode(const token* tk);
 void token_parsing_assembly_directive(const char* line);
 void tokenizing_operand(const char* operand, char* target[MAX_OPERAND]);
 int get_num_of_operand(const char* operand);
