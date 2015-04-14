@@ -28,6 +28,7 @@
 #define ASSEMBLY_DIRECTIVE_WORD_STRING "WORD"
 #define ASSEMBLY_DIRECTIVE_RESB_STRING "RESB"
 #define ASSEMBLY_DIRECTIVE_RESW_STRING "RESW"
+#define ASSEMBLY_DIRECTIVE_LTORG_STRING "LTORG"
 #define ASSEMBLY_DIRECTIVE_EXTDEF_STRING "EXTDEF"
 #define ASSEMBLY_DIRECTIVE_EXTREF_STRING "EXTREF"
 #define ASSEMBLY_DIRECTIVE_CSECT_STRING "CSECT"
@@ -87,6 +88,9 @@ static int locctr;
 static int symbol_num;
 //--------------
 
+char *literal_table[MAX_LINES];
+static int literal_num;
+
 static char *input_file;
 static char *output_file;
 
@@ -102,6 +106,8 @@ int token_parsing(int index);
 
 
 // my functions
+void add_literal_if_not_exist(const char* operand);
+void generate_literals();
 int get_opcode_of_instruction(int i);
 int get_num_of_operand_of_instruction(int i);
 int get_instruction_size(const char* operator);

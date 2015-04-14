@@ -93,6 +93,9 @@ static int assem_pass1(void)
 		}
 	}
 
+	// LTORG를 만나지 못해서 아직 추가되지 않은 것들 추가해줌.
+	generate_literals();
+
 	printf("parsing complete\n");
 
 	for( int i = 0; i < symbol_num; i ++ ) {
@@ -362,10 +365,8 @@ void token_parsing_assembly_directive(const char* line) {
 
 	make_token(label, operator, operand, comment);
 
-	if( strcmp(operator, ASSEMBLY_DIRECTIVE_EXTDEF_STRING) == 0 ) {
-		// make_token(label, operator, operand, comment);
-	} else if( strcmp(operator, ASSEMBLY_DIRECTIVE_EXTREF_STRING) == 0 ) {
-		// make_token(label, operator, operand, comment);
+	if( strcmp(operator, ASSEMBLY_DIRECTIVE_LTORG_STRING) == 0 ) {
+		generate_literals();
 	}
 }
 
@@ -373,6 +374,10 @@ void tokenizing_operand(const char* operand, char* target[MAX_OPERAND]) {
 	int num_of_operand = get_num_of_operand(operand);
 	if( num_of_operand == 1 ) {
 		target[0] = strdup(operand);
+
+		// 리터럴 추가
+		add_literal_if_not_exist(operand);
+
 		return;
 	}
 
@@ -456,6 +461,32 @@ void make_objectcode(char *file_name)
 //
 // my functions
 //
+void add_literal_if_not_exist(const char* operand) {
+	for( int i = 0; i < literal_num; i ++ ) {
+		if( strcmp(literal_table[i], operand) == 0 ) {
+			return;
+		}
+	}
+
+	if( operand[0] == '=' ) {
+		literal_table[literal_num] = strdup(operand);
+		literal_num++;
+	}
+}
+
+void generate_literals() {
+	for( int i = 0; i < literal_num; i ++ ) {
+		token* curr_token = malloc_token();
+		curr_token->operand[0] = literal_table[i];
+		literal_table[i] = NULL;
+
+		// =X'~', =C'~' 라서 4글자 빼줌
+		int size = strlen(curr_token->operand[0]) - 4;
+		locctr += size;
+	}
+	literal_num = 0;
+}
+
 int get_opcode_of_instruction(int i) {
 	char **curr = inst[i];
 	// 오른쪽에서 두 번째 16진수 수의 맨 앞 비트가 1이면 앞 부분이 모두 1로 채워지는 문제 해결
@@ -496,6 +527,7 @@ int is_assembly_directive(const char* opcode) {
 		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_WORD_STRING) == 0
 		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_RESB_STRING) == 0
 		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_RESW_STRING) == 0
+		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_LTORG_STRING) == 0
 		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_EXTDEF_STRING) == 0
 		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_EXTREF_STRING) == 0
 		|| strcmp(opcode, ASSEMBLY_DIRECTIVE_CSECT_STRING) == 0;
