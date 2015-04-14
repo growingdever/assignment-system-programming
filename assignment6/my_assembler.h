@@ -30,6 +30,7 @@
 #define ASSEMBLY_DIRECTIVE_RESW_STRING "RESW"
 #define ASSEMBLY_DIRECTIVE_EXTDEF_STRING "EXTDEF"
 #define ASSEMBLY_DIRECTIVE_EXTREF_STRING "EXTREF"
+#define ASSEMBLY_DIRECTIVE_CSECT_STRING "CSECT"
 
 #define INSTRUCTION_TABLE_FILE_PATH "inst.data"
 #define INPUT_FILE_PATH "program_in.txt"
@@ -83,6 +84,7 @@ typedef struct symbol_unit symbol;
 symbol sym_table[MAX_LINES];
 
 static int locctr;
+static int symbol_num;
 //--------------
 
 static char *input_file;
@@ -94,7 +96,7 @@ static int assem_pass1(void);
 static int assem_pass2(void);
 int init_inst_file(char *inst_file);
 int init_input_file(char *path);
-int search_opcode(char *str);
+int search_opcode(const char *str);
 void make_objectcode(char *file_name);
 int token_parsing(int index);
 
@@ -102,6 +104,7 @@ int token_parsing(int index);
 // my functions
 int get_opcode_of_instruction(int i);
 int get_num_of_operand_of_instruction(int i);
+int get_instruction_size(const char* operator);
 int is_assembly_directive(const char* opcode);
 token* malloc_token();
 void make_token(const char* label, 

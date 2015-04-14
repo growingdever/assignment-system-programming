@@ -95,6 +95,11 @@ static int assem_pass1(void)
 
 	printf("parsing complete\n");
 
+	for( int i = 0; i < symbol_num; i ++ ) {
+		symbol sym = sym_table[i];
+		printf("%s %04X\n", sym.symbol, sym.addr);
+	}
+
 	for( int i = 0; i < token_line; i ++ ) {
 		token *curr_token = token_table[i];
 		if( curr_token->operator == NULL ) {
@@ -305,6 +310,24 @@ void make_token(const char* label,
 	tokenizing_operand(operand, curr_token->operand);
 	// // comment 복사(아직 한 단어 밖에 인식 안되지만 그래도....)
 	curr_token->comment = strdup(comment);
+
+	if( strcmp(operator, ASSEMBLY_DIRECTIVE_CSECT_STRING) == 0 ) {
+		locctr = 0;
+	}
+
+	// 레이블 있으면 심볼 테이블에 추가
+	if( strlen(label) > 0 ) {
+		strcpy(sym_table[symbol_num].symbol, label);
+		sym_table[symbol_num].addr = locctr;
+		symbol_num++;
+	}
+
+	if( is_assembly_directive(operator) ) {
+
+	} else {
+		int instruction_size = get_instruction_size(operator);
+		locctr += instruction_size;
+	}
 }
 
 void token_parsing_assembly_directive(const char* line) {
@@ -321,9 +344,9 @@ void token_parsing_assembly_directive(const char* line) {
 	}
 
 	if( strcmp(operator, ASSEMBLY_DIRECTIVE_EXTDEF_STRING) == 0 ) {
-		make_token(label, operator, operand, comment);
+		// make_token(label, operator, operand, comment);
 	} else if( strcmp(operator, ASSEMBLY_DIRECTIVE_EXTREF_STRING) == 0 ) {
-		make_token(label, operator, operand, comment);
+		// make_token(label, operator, operand, comment);
 	}
 }
 
@@ -374,7 +397,7 @@ int get_num_of_operand(const char* operand) {
  * -----------------------------------------------------------------------------------
  */
 
-int search_opcode(char *str) 
+int search_opcode(const char *str) 
 {
 	for( int i = 0; i < inst_num; i ++ ) {
 		// 일단 컬럼 가져오고
@@ -427,6 +450,27 @@ int get_num_of_operand_of_instruction(int i) {
 	char **curr = inst[i];
 	// 오른쪽에서 두 번째 16진수 수의 맨 앞 비트가 1이면 앞 부분이 모두 1로 채워지는 문제 해결
 	return 0x000000FF & *curr[OPCODE_COLUMN_NUM_OF_OPERAND];
+}
+
+int get_instruction_size(const char* operator) {
+	int instruction_size;
+	if( operator[0] == '+' ) {
+		instruction_size = 4;
+	} else {
+		int index = search_opcode(operator);
+		if( index >= 0 ) {
+			const char *format = inst[index][OPCODE_COLUMN_FORMAT];
+			if( format[0] == '2' ) {
+				instruction_size = 2;
+			} else {
+				instruction_size = 3;
+			}
+		} else {
+			instruction_size = 3;
+		}
+	}
+
+	return instruction_size;
 }
 
 int is_assembly_directive(const char* opcode) {
