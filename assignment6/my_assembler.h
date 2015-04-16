@@ -86,6 +86,9 @@ symbol sym_table[MAX_LINES];
 
 static int locctr;
 static int symbol_num;
+
+int csect_of_symbol[MAX_LINES];
+static int curr_csect;
 //--------------
 
 char *literal_table[MAX_LINES];
@@ -109,7 +112,7 @@ int token_parsing(int index);
 void add_literal_if_not_exist(const char* operand);
 void generate_literals();
 void add_symbol(const char* symbol, int address);
-int get_symbol_address(const char* symbol);
+int get_symbol_address(const char* symbol, int control_secion_num);
 int get_opcode_of_instruction(int i);
 int get_format_of_instruction(int i);
 int get_address_of_register(const char* reg);

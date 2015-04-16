@@ -120,6 +120,7 @@ static int assem_pass1(void)
 static int assem_pass2(void)
 {
 	int location_counter = 0;
+	int control_secion_num = 0;
 
 	for( int i = 0; i < token_line; i ++ ) {
 		token *curr_token = token_table[i];
@@ -138,6 +139,7 @@ static int assem_pass2(void)
 			if( is_assembly_directive(curr_token->operator) ) {
 				if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_CSECT_STRING) == 0 ) {
 					location_counter = 0;
+					control_secion_num++;
 				}
 
 				// printf("%s\t", curr_token->label);
@@ -202,14 +204,14 @@ static int assem_pass2(void)
 						n = 1;
 						i = 0;
 
-						int target_address = get_symbol_address(operand1 + 1);
+						int target_address = get_symbol_address(operand1 + 1, control_secion_num);
 						// printf("target:%06X loc:%06X\n", target_address, location_counter);
 						disp = target_address - location_counter;
 					} else {
 						n = 1;
 						i = 1;
 
-						int target_address = get_symbol_address(operand1);
+						int target_address = get_symbol_address(operand1, control_secion_num);
 						// printf("target:%06X loc:%06X\n", target_address, location_counter);
 						disp = target_address - location_counter;
 					}
@@ -406,6 +408,7 @@ void make_token(const char* label,
 
 	if( strcmp(operator, ASSEMBLY_DIRECTIVE_CSECT_STRING) == 0 ) {
 		locctr = 0;
+		curr_csect++;
 	}
 
 	// 레이블 있으면 심볼 테이블에 추가
@@ -580,12 +583,15 @@ void generate_literals() {
 void add_symbol(const char* symbol, int address) {
 	strcpy(sym_table[symbol_num].symbol, symbol);
 	sym_table[symbol_num].addr = address;
+	csect_of_symbol[symbol_num] = curr_csect;
+
 	symbol_num++;
 }
 
-int get_symbol_address(const char* symbol) {
+int get_symbol_address(const char* symbol, int control_secion_num) {
 	for( int i = 0; i < symbol_num; i ++ ) {
-		if( strcmp(sym_table[i].symbol, symbol) == 0 ) {
+		if( strcmp(sym_table[i].symbol, symbol) == 0 
+			&& csect_of_symbol[i] == control_secion_num ) {
 			return sym_table[i].addr;
 		}
 	}
