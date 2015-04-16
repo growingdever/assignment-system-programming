@@ -108,6 +108,7 @@ int token_parsing(int index);
 // my functions
 void add_literal_if_not_exist(const char* operand);
 void generate_literals();
+void add_symbol(const char* symbol, int address);
 int get_opcode_of_instruction(int i);
 int get_num_of_operand_of_instruction(int i);
 int get_instruction_size(const char* operator);

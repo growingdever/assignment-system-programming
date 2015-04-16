@@ -103,6 +103,22 @@ static int assem_pass1(void)
 		printf("%s %04X\n", sym.symbol, sym.addr);
 	}
 
+	return -1;
+}
+
+/* -----------------------------------------------------------------------------------
+ * 설명 : 어셈블리 코드를 기계어 코드로 바꾸기 위한 패스2 과정을 수행하는 함수이다. 
+ *		   패스 2에서는 프로그램을 기계어로 바꾸는 작업은 라인 단위로 수행된다. 
+ *		   다음과 같은 작업이 수행되어 진다. 
+ *		   1. 실제로 해당 어셈블리 명령어를 기계어로 바꾸는 작업을 수행한다. 
+ * 매계 : 없음
+ * 반환 : 정상종료 = 0, 에러발생 = < 0 
+ * 주의 : 
+ * -----------------------------------------------------------------------------------
+ */
+
+static int assem_pass2(void)
+{
 	for( int i = 0; i < token_line; i ++ ) {
 		token *curr_token = token_table[i];
 		if( curr_token->operator == NULL ) {
@@ -134,23 +150,6 @@ static int assem_pass1(void)
 		// printf("0x%02X\n", opcode);
 	}
 
-	return -1;
-}
-
-/* -----------------------------------------------------------------------------------
- * 설명 : 어셈블리 코드를 기계어 코드로 바꾸기 위한 패스2 과정을 수행하는 함수이다. 
- *		   패스 2에서는 프로그램을 기계어로 바꾸는 작업은 라인 단위로 수행된다. 
- *		   다음과 같은 작업이 수행되어 진다. 
- *		   1. 실제로 해당 어셈블리 명령어를 기계어로 바꾸는 작업을 수행한다. 
- * 매계 : 없음
- * 반환 : 정상종료 = 0, 에러발생 = < 0 
- * 주의 : 
- * -----------------------------------------------------------------------------------
- */
-
-static int assem_pass2(void)
-{
-	/* add your code here */
 	return -1;
 }
 /* -----------------------------------------------------------------------------------
@@ -320,9 +319,7 @@ void make_token(const char* label,
 
 	// 레이블 있으면 심볼 테이블에 추가
 	if( strlen(label) > 0 ) {
-		strcpy(sym_table[symbol_num].symbol, label);
-		sym_table[symbol_num].addr = locctr;
-		symbol_num++;
+		add_symbol(label, locctr);
 	}
 
 	locctr += increase_locctr_by_opcode(curr_token);
@@ -480,11 +477,19 @@ void generate_literals() {
 		curr_token->operand[0] = literal_table[i];
 		literal_table[i] = NULL;
 
+		add_symbol(curr_token->operand[0], locctr);
+
 		// =X'~', =C'~' 라서 4글자 빼줌
 		int size = strlen(curr_token->operand[0]) - 4;
 		locctr += size;
 	}
 	literal_num = 0;
+}
+
+void add_symbol(const char* symbol, int address) {
+	strcpy(sym_table[symbol_num].symbol, symbol);
+	sym_table[symbol_num].addr = address;
+	symbol_num++;
 }
 
 int get_opcode_of_instruction(int i) {
