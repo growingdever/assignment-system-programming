@@ -125,7 +125,13 @@ static int assem_pass2(void)
 			continue;
 		}
 
-		int instruction_number = search_opcode( curr_token->operator );
+		int instruction_number = -1;
+		if( curr_token->operator[0] == '+' ) {
+			instruction_number = search_opcode( curr_token->operator + 1 );
+		} else {
+			instruction_number = search_opcode( curr_token->operator );
+		}
+
 		if( instruction_number < 0 ) {
 			if( is_assembly_directive(curr_token->operator) ) {
 				// printf("%s\t", curr_token->label);
@@ -137,17 +143,48 @@ static int assem_pass2(void)
 			continue;
 		}
 
+		const char* operator = curr_token->operator;
+		int n = 1, i = 1, x = 0, b = 0, p = 0, e = 0;
+		int code = 0;
 		int opcode = get_opcode_of_instruction(instruction_number);
-
-		if( curr_token->label ) {
-			// printf("%s\t", curr_token->label);
+		if( operator[0] == '+' ) {
+			// format 4
+			e = 1;
 		} else {
-			// printf("%6s\t", "");
+			// format 2 or 3
+			int format = get_format_of_instruction(instruction_number);
+			if( format == 2 ) {
+				// opcode 쓰고
+				code += opcode << 8;
+
+				const char* operand1 = curr_token->operand[0];
+				if( operand1 != NULL ) {
+					int addr = get_address_of_register(operand1);
+					code += addr << 4;
+				}
+
+				const char* operand2 = curr_token->operand[1];
+				if( operand2 != NULL ) {
+					int addr = get_address_of_register(operand2);
+					code += addr;
+				}
+
+			} else if( format == 3 ) {
+
+			}
 		}
 
-		// printf("%s\t", curr_token->operator);
-		// printf("%8s\t", curr_token->operand[0]);
-		// printf("0x%02X\n", opcode);
+		if( curr_token->label ) {
+			printf("%s\t", curr_token->label);
+		} else {
+			printf("%6s\t", "");
+		}
+
+		printf("%s\t", curr_token->operator);
+		printf("%8s\t", curr_token->operand[0]);
+		printf("0x%02X\t", opcode);
+
+		printf("0x%08X\n", code);
 	}
 
 	return -1;
@@ -492,10 +529,49 @@ void add_symbol(const char* symbol, int address) {
 	symbol_num++;
 }
 
+int get_symbol_address(const char* symbol) {
+	for( int i = 0; i < symbol_num; i ++ ) {
+		if( strcmp(sym_table[i].symbol, symbol) == 0 ) {
+			return sym_table[i].addr;
+		}
+	}
+	return -1;
+}
+
 int get_opcode_of_instruction(int i) {
 	char **curr = inst[i];
 	// 오른쪽에서 두 번째 16진수 수의 맨 앞 비트가 1이면 앞 부분이 모두 1로 채워지는 문제 해결
 	return 0x000000FF & *curr[OPCODE_COLUMN_CODE];
+}
+
+int get_format_of_instruction(int i) {
+	char **curr = inst[i];
+	char *format_str = curr[OPCODE_COLUMN_FORMAT];
+	return format_str[0] - '0';
+}
+
+int get_address_of_register(const char* reg) {
+	if( strcmp(reg, "A") == 0 ) {
+		return 0;
+	} else if( strcmp(reg, "X") == 0 ) {
+		return 1;
+	} else if( strcmp(reg, "L") == 0 ) {
+		return 2;
+	} else if( strcmp(reg, "PC") == 0 ) {
+		return 8;
+	} else if( strcmp(reg, "SW") == 0 ) {
+		return 9;
+	} else if( strcmp(reg, "B") == 0 ) {
+		return 3;
+	} else if( strcmp(reg, "S") == 0 ) {
+		return 4;
+	} else if( strcmp(reg, "T") == 0 ) {
+		return 5;
+	} else if( strcmp(reg, "F") == 0 ) {
+		return 6;
+	}
+
+	return -1;
 }
 
 int get_num_of_operand_of_instruction(int i) {
