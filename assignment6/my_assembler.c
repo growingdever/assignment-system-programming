@@ -119,6 +119,8 @@ static int assem_pass1(void)
 
 static int assem_pass2(void)
 {
+	int location_counter = 0;
+
 	for( int i = 0; i < token_line; i ++ ) {
 		token *curr_token = token_table[i];
 		if( curr_token->operator == NULL ) {
@@ -134,6 +136,10 @@ static int assem_pass2(void)
 
 		if( instruction_number < 0 ) {
 			if( is_assembly_directive(curr_token->operator) ) {
+				if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_CSECT_STRING) == 0 ) {
+					location_counter = 0;
+				}
+
 				// printf("%s\t", curr_token->label);
 				// printf("%s\t", curr_token->operator);
 				// printf("%8s\t\n", curr_token->operand[0]);
@@ -144,16 +150,20 @@ static int assem_pass2(void)
 		}
 
 		const char* operator = curr_token->operator;
-		int n = 1, i = 1, x = 0, b = 0, p = 0, e = 0;
+		int n = 1, i = 1, x = 0, b = 0, p = 0, e = 0, disp = 0;
 		int code = 0;
 		int opcode = get_opcode_of_instruction(instruction_number);
 		if( operator[0] == '+' ) {
 			// format 4
+			location_counter += 4;
+
 			e = 1;
 		} else {
 			// format 2 or 3
 			int format = get_format_of_instruction(instruction_number);
 			if( format == 2 ) {
+				location_counter += 2;
+
 				// opcode 쓰고
 				code += opcode << 8;
 
@@ -170,7 +180,51 @@ static int assem_pass2(void)
 				}
 
 			} else if( format == 3 ) {
+				location_counter += 3;
 
+				p = 1;
+
+				const char* operand1 = curr_token->operand[0];
+				const char* operand2 = curr_token->operand[1];
+
+				if( operand1[0] == 0 ) {
+					n = 1;
+					i = 1;
+					x = b = p = e = 0;
+				} else {
+					if( operand1[0] == '#' ) {
+						n = 0;
+						i = 1;
+						p = 0;
+
+						disp = atoi(operand1 + 1);
+					} else if( operand1[0] == '@' ) {
+						n = 1;
+						i = 0;
+
+						int target_address = get_symbol_address(operand1 + 1);
+						// printf("target:%06X loc:%06X\n", target_address, location_counter);
+						disp = target_address - location_counter;
+					} else {
+						n = 1;
+						i = 1;
+
+						int target_address = get_symbol_address(operand1);
+						// printf("target:%06X loc:%06X\n", target_address, location_counter);
+						disp = target_address - location_counter;
+					}
+				}
+
+				if( curr_token->operand[1] != NULL ) {
+					x = 1;
+				}
+
+				code += (opcode + n * 2 + i) << 16;
+				code += x << 15;
+				code += b << 14;
+				code += p << 13;
+				code += e << 12;
+				code += (0x00000FFF & disp);
 			}
 		}
 
