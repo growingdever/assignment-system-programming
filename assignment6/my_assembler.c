@@ -159,7 +159,20 @@ static int assem_pass2(void)
 			// format 4
 			location_counter += 4;
 
+			const char* operand1 = curr_token->operand[0];
+			const char* operand2 = curr_token->operand[1];
+
+			if( operand2 != NULL && operand2[0] == 'X' ) {
+				x = 1;
+			}
+
+			n = 1;
+			i = 1;
 			e = 1;
+
+			code += (opcode + n * 2 + i) << 24;
+			code += x << 23;
+			code += e << 20;
 		} else {
 			// format 2 or 3
 			int format = get_format_of_instruction(instruction_number);
