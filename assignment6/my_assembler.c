@@ -103,7 +103,7 @@ static int assem_pass1(void)
 		printf("%s %04X\n", sym.symbol, sym.addr);
 	}
 
-	return -1;
+	return 0;
 }
 
 /* -----------------------------------------------------------------------------------
