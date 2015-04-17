@@ -538,8 +538,6 @@ int get_object_code(token *tok, int location_counter, int control_section_num) {
 						char c = tok->operand[0][i];
 						code += c << (8 * abs(i - right));
 					}
-
-					printf("%06X\n", code);
 				}
 			}
 		} else {
