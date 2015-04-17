@@ -120,7 +120,7 @@ static int assem_pass1(void)
 static int assem_pass2(void)
 {
 	int location_counter = 0;
-	int control_secion_num = 0;
+	int control_section_num = 0;
 
 	for( int i = 0; i < token_line; i ++ ) {
 		token *curr_token = token_table[i];
@@ -128,120 +128,9 @@ static int assem_pass2(void)
 			continue;
 		}
 
-		int instruction_number = -1;
-		if( curr_token->operator[0] == '+' ) {
-			instruction_number = search_opcode( curr_token->operator + 1 );
-		} else {
-			instruction_number = search_opcode( curr_token->operator );
-		}
-
-		if( instruction_number < 0 ) {
-			if( is_assembly_directive(curr_token->operator) ) {
-				if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_CSECT_STRING) == 0 ) {
-					location_counter = 0;
-					control_secion_num++;
-				}
-
-				// printf("%s\t", curr_token->label);
-				// printf("%s\t", curr_token->operator);
-				// printf("%8s\t\n", curr_token->operand[0]);
-			} else {
-				// error!
-			}
-			continue;
-		}
-
-		const char* operator = curr_token->operator;
-		int n = 1, i = 1, x = 0, b = 0, p = 0, e = 0, disp = 0;
-		int code = 0;
-		int opcode = get_opcode_of_instruction(instruction_number);
-		if( operator[0] == '+' ) {
-			// format 4
-			location_counter += 4;
-
-			const char* operand1 = curr_token->operand[0];
-			const char* operand2 = curr_token->operand[1];
-
-			if( operand2 != NULL && operand2[0] == 'X' ) {
-				x = 1;
-			}
-
-			n = 1;
-			i = 1;
-			e = 1;
-
-			code += (opcode + n * 2 + i) << 24;
-			code += x << 23;
-			code += e << 20;
-		} else {
-			// format 2 or 3
-			int format = get_format_of_instruction(instruction_number);
-			if( format == 2 ) {
-				location_counter += 2;
-
-				// opcode 쓰고
-				code += opcode << 8;
-
-				const char* operand1 = curr_token->operand[0];
-				if( operand1 != NULL ) {
-					int addr = get_address_of_register(operand1);
-					code += addr << 4;
-				}
-
-				const char* operand2 = curr_token->operand[1];
-				if( operand2 != NULL ) {
-					int addr = get_address_of_register(operand2);
-					code += addr;
-				}
-
-			} else if( format == 3 ) {
-				location_counter += 3;
-
-				p = 1;
-
-				const char* operand1 = curr_token->operand[0];
-				const char* operand2 = curr_token->operand[1];
-
-				if( operand1[0] == 0 ) {
-					n = 1;
-					i = 1;
-					x = b = p = e = 0;
-				} else {
-					if( operand1[0] == '#' ) {
-						n = 0;
-						i = 1;
-						p = 0;
-
-						disp = atoi(operand1 + 1);
-					} else if( operand1[0] == '@' ) {
-						n = 1;
-						i = 0;
-
-						int target_address = get_symbol_address(operand1 + 1, control_secion_num);
-						// printf("target:%06X loc:%06X\n", target_address, location_counter);
-						disp = target_address - location_counter;
-					} else {
-						n = 1;
-						i = 1;
-
-						int target_address = get_symbol_address(operand1, control_secion_num);
-						// printf("target:%06X loc:%06X\n", target_address, location_counter);
-						disp = target_address - location_counter;
-					}
-				}
-
-				if( curr_token->operand[1] != NULL ) {
-					x = 1;
-				}
-
-				code += (opcode + n * 2 + i) << 16;
-				code += x << 15;
-				code += b << 14;
-				code += p << 13;
-				code += e << 12;
-				code += (0x00000FFF & disp);
-			}
-		}
+		int code = get_object_code(curr_token,
+			location_counter,
+			control_section_num);
 
 		if( curr_token->label ) {
 			printf("%s\t", curr_token->label);
@@ -251,9 +140,13 @@ static int assem_pass2(void)
 
 		printf("%s\t", curr_token->operator);
 		printf("%8s\t", curr_token->operand[0]);
-		printf("0x%02X\t", opcode);
+		// printf("0x%02X\t", opcode);
 
-		printf("0x%08X\n", code);
+		if( code < 0 ) {
+			printf("\n");
+		} else {
+			printf("0x%08X\n", code);
+		}
 	}
 
 	return -1;
@@ -601,14 +494,152 @@ void add_symbol(const char* symbol, int address) {
 	symbol_num++;
 }
 
-int get_symbol_address(const char* symbol, int control_secion_num) {
+int get_symbol_address(const char* symbol, int control_section_num) {
 	for( int i = 0; i < symbol_num; i ++ ) {
 		if( strcmp(sym_table[i].symbol, symbol) == 0 
-			&& csect_of_symbol[i] == control_secion_num ) {
+			&& csect_of_symbol[i] == control_section_num ) {
 			return sym_table[i].addr;
 		}
 	}
 	return -1;
+}
+
+int get_object_code(token *tok, int location_counter, int control_section_num) {
+	int n = 1, i = 1, x = 0, b = 0, p = 0, e = 0, disp = 0;
+	int code = 0;
+
+	int instruction_number = -1;
+	if( tok->operator[0] == '+' ) {
+		instruction_number = search_opcode( tok->operator + 1 );
+	} else {
+		instruction_number = search_opcode( tok->operator );
+	}
+
+	if( instruction_number < 0 ) {
+		if( is_assembly_directive(tok->operator) ) {
+			if( strcmp(tok->operator, ASSEMBLY_DIRECTIVE_CSECT_STRING) == 0 ) {
+				location_counter = 0;
+				control_section_num++;
+			} else if( strcmp(tok->operator, ASSEMBLY_DIRECTIVE_WORD_STRING) == 0 ) {
+				code += atoi(tok->operand[0]);
+			} else if( strcmp(tok->operator, ASSEMBLY_DIRECTIVE_BYTE_STRING) == 0 ) {
+				if( tok->operand[0][0] == 'X' ) {
+					const int left = 2;
+					const int right = 3;
+					for( int i = left; i <= right; i ++ ) {
+						char c = tok->operand[0][i];
+						int tmp = c > '9' ? c - 'A' + 10 : c - '0';
+						code += tmp << (4 * abs(i - right));
+					}
+				} else if( tok->operand[0][0] == 'C' ) {
+					const int left = 2;
+					const int right = strlen(tok->operand[0]) - 2;
+					for( int i = left; i <= right; i ++ ) {
+						char c = tok->operand[0][i];
+						code += c << (8 * abs(i - right));
+					}
+
+					printf("%06X\n", code);
+				}
+			}
+		} else {
+			// error!
+		}
+
+		return code != 0 ? code : -1;
+	}
+
+	const char* operator = tok->operator;
+	int opcode = get_opcode_of_instruction(instruction_number);
+	if( operator[0] == '+' ) {
+		// format 4
+		location_counter += 4;
+
+		const char* operand1 = tok->operand[0];
+		const char* operand2 = tok->operand[1];
+
+		if( operand2 != NULL && operand2[0] == 'X' ) {
+			x = 1;
+		}
+
+		n = 1;
+		i = 1;
+		e = 1;
+
+		code += (opcode + n * 2 + i) << 24;
+		code += x << 23;
+		code += e << 20;
+	} else {
+		// format 2 or 3
+		int format = get_format_of_instruction(instruction_number);
+		if( format == 2 ) {
+			location_counter += 2;
+
+			// opcode 쓰고
+			code += opcode << 8;
+
+			const char* operand1 = tok->operand[0];
+			if( operand1 != NULL ) {
+				int addr = get_address_of_register(operand1);
+				code += addr << 4;
+			}
+
+			const char* operand2 = tok->operand[1];
+			if( operand2 != NULL ) {
+				int addr = get_address_of_register(operand2);
+				code += addr;
+			}
+
+		} else if( format == 3 ) {
+			location_counter += 3;
+
+			p = 1;
+
+			const char* operand1 = tok->operand[0];
+			const char* operand2 = tok->operand[1];
+
+			if( operand1[0] == 0 ) {
+				n = 1;
+				i = 1;
+				x = b = p = e = 0;
+			} else {
+				if( operand1[0] == '#' ) {
+					n = 0;
+					i = 1;
+					p = 0;
+
+					disp = atoi(operand1 + 1);
+				} else if( operand1[0] == '@' ) {
+					n = 1;
+					i = 0;
+
+					int target_address = get_symbol_address(operand1 + 1, control_section_num);
+					// printf("target:%06X loc:%06X\n", target_address, location_counter);
+					disp = target_address - location_counter;
+				} else {
+					n = 1;
+					i = 1;
+
+					int target_address = get_symbol_address(operand1, control_section_num);
+					// printf("target:%06X loc:%06X\n", target_address, location_counter);
+					disp = target_address - location_counter;
+				}
+			}
+
+			if( tok->operand[1] != NULL ) {
+				x = 1;
+			}
+
+			code += (opcode + n * 2 + i) << 16;
+			code += x << 15;
+			code += b << 14;
+			code += p << 13;
+			code += e << 12;
+			code += (0x00000FFF & disp);
+		}
+	}
+
+	return code;
 }
 
 int get_opcode_of_instruction(int i) {
