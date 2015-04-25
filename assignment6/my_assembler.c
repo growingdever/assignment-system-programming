@@ -791,20 +791,9 @@ int get_object_code(token *tok, int location_counter, int control_section_num) {
 				code += atoi(tok->operand[0]);
 			} else if( strcmp(tok->operator, ASSEMBLY_DIRECTIVE_BYTE_STRING) == 0 ) {
 				if( tok->operand[0][0] == 'X' ) {
-					const int left = 2;
-					const int right = 3;
-					for( int i = left; i <= right; i ++ ) {
-						char c = tok->operand[0][i];
-						int tmp = c > '9' ? c - 'A' + 10 : c - '0';
-						code += tmp << (4 * abs(i - right));
-					}
+					code += get_object_code_of_byte(tok->operand[0]);
 				} else if( tok->operand[0][0] == 'C' ) {
-					const int left = 2;
-					const int right = strlen(tok->operand[0]) - 2;
-					for( int i = left; i <= right; i ++ ) {
-						char c = tok->operand[0][i];
-						code += c << (8 * abs(i - right));
-					}
+					code += get_object_code_of_string(tok->operand[0]);
 				}
 			}
 		} else {
@@ -902,6 +891,33 @@ int get_object_code(token *tok, int location_counter, int control_section_num) {
 			code += e << 12;
 			code += (0x00000FFF & disp);
 		}
+	}
+
+	return code;
+}
+
+int get_object_code_of_byte(const char* operand) {
+	int code = 0;
+
+	const int left = 2;
+	const int right = 3;
+	for( int i = left; i <= right; i ++ ) {
+		char c = operand[i];
+		int tmp = c > '9' ? c - 'A' + 10 : c - '0';
+		code += tmp << (4 * abs(i - right));
+	}
+
+	return code;
+}
+
+int get_object_code_of_string(const char* operand) {
+	int code = 0;
+
+	const int left = 2;
+	const int right = strlen(operand) - 2;
+	for( int i = left; i <= right; i ++ ) {
+		char c = operand[i];
+		code += c << (8 * abs(i - right));
 	}
 
 	return code;
