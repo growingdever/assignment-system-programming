@@ -671,6 +671,9 @@ void make_objectcode(char *file_name)
 			memset(modification_row_index_arr, 0, sizeof(modification_row_index_arr));
 			num_of_modification_row = 0;
 
+			// 원래 헤더 코드 복구
+			unit = &object_codes[i];
+
 			if( i != 0 ) {
 				fprintf(fp, "\n");
 			}
