@@ -100,7 +100,7 @@ static int assem_pass1(void)
 
 	for( int i = 0; i < symbol_num; i ++ ) {
 		symbol sym = sym_table[i];
-		printf("%s %04X\n", sym.symbol, sym.addr);
+		printf("%s %04X %d\n", sym.symbol, sym.addr, csect_of_symbol[i]);
 	}
 
 	return 0;
@@ -122,6 +122,8 @@ static int assem_pass2(void)
 	int location_counter = 0;
 	int control_section_num = -1; // trick
 
+	object_code *prev_header_unit = NULL;
+
 	for( int i = 0; i < token_line; i ++ ) {
 		token *curr_token = token_table[i];
 		if( curr_token->operator == NULL ) {
@@ -130,6 +132,12 @@ static int assem_pass2(void)
 
 		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_START_STRING) == 0
 			|| strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_CSECT_STRING) == 0 ) {
+			// 이전 code sector의 length 넣어줌
+			if( i != 0 ) {
+				prev_header_unit->target_address = location_counter;
+			}
+			prev_header_unit = &object_codes[object_code_num];
+
 			object_codes[object_code_num].control_section_num = control_section_num;
 			object_codes[object_code_num].type = 'H';
 			strcpy( object_codes[object_code_num].symbol, curr_token->label );
@@ -143,6 +151,7 @@ static int assem_pass2(void)
 		}
 
 		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_END_STRING) == 0 ) {
+			prev_header_unit->target_address = location_counter;
 			continue;
 		}
 
@@ -182,7 +191,34 @@ static int assem_pass2(void)
 			continue;
 		}
 
-		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_EQU_STRING) == 0 ){
+		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_EQU_STRING) == 0 ) {
+			continue;
+		}
+
+		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_LTORG_STRING) == 0 ) {
+			for( int j = 0; j < symbol_num; j ++ ) {
+				if( csect_of_symbol[j] == control_section_num && sym_table[j].symbol[0] == '=' ) {
+					int code = 0;
+					int size = 0;
+					if( sym_table[j].symbol[1] == 'C' ) {
+						code += get_object_code_of_string(sym_table[j].symbol + 1);
+						size = strlen(sym_table[j].symbol) - 4;
+					} else if( sym_table[j].symbol[1] == 'X' ) {
+						code += get_object_code_of_byte(sym_table[j].symbol + 1);
+						size = (strlen(sym_table[j].symbol) - 4) / 2;
+					}
+					
+					object_codes[object_code_num].control_section_num = control_section_num;
+					object_codes[object_code_num].type = 'T';
+					object_codes[object_code_num].code = code;
+					object_codes[object_code_num].length = get_format_of_object_code(code);
+					object_codes[object_code_num].address = location_counter;
+					object_code_num++;
+
+					// 글자부분만 계산
+					location_counter += size;
+				}
+			}
 			continue;
 		}
 
@@ -217,70 +253,94 @@ static int assem_pass2(void)
 		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_RESW_STRING) == 0 
 			|| strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_RESB_STRING) == 0
 			|| strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_BYTE_STRING) == 0 ) {
-			continue;
-		}
-
-		for( int j = 0; j < MAX_OPERAND; j ++ ) {
-			if( ! curr_token->operand[j] ) {
-				continue;
-			}
-
-			char* operand = curr_token->operand[j];
-			if( strlen(operand) == 0 ) {
-				continue;
-			}
-
-			if( get_address_of_register(operand) >= 0 ) {
-				continue;
-			}
-
-			// immediate 타입 패스
-			if( operand[0] == '#' ) {
-				continue;
-			}
-
-			// literal 패스
-			if( operand[0] == '=' ) {
-				continue;
-			}
-
-			char* real_symbol = operand;
-			if( real_symbol[0] == '@' ) {
-				real_symbol++;
-			}
-			if( real_symbol[0] == '+' || real_symbol[0] == '-' ) {
-				real_symbol++;
-			}
-
-
-			if( get_symbol_address(real_symbol, control_section_num) < 0 ) {
-				object_codes[object_code_num].control_section_num = control_section_num;
-				object_codes[object_code_num].type = 'M';
-				object_codes[object_code_num].code = 0;
-				object_codes[object_code_num].length = 0;
-				object_codes[object_code_num].address = location_counter;
-				if( operand[0] == '-' ) {
-					object_codes[object_code_num].symbol[0] = '-';
-					strcpy( object_codes[object_code_num].symbol + 1, real_symbol );
-				} else {
-					object_codes[object_code_num].symbol[0] = '+';
-					strcpy( object_codes[object_code_num].symbol + 1, real_symbol );
+		} else {
+			for( int j = 0; j < MAX_OPERAND; j ++ ) {
+				if( ! curr_token->operand[j] ) {
+					continue;
 				}
 
-				if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_WORD_STRING) == 0 
-					|| get_format_of_object_code(code) == 3 ) {
-					object_codes[object_code_num].target_address = location_counter + 1;
-					object_codes[object_code_num].modify_length = 6;
-				} else if( get_format_of_object_code(code) == 4 ) {
-					object_codes[object_code_num].target_address = location_counter + 1;
-					object_codes[object_code_num].modify_length = 5;
+				char* operand = curr_token->operand[j];
+				if( strlen(operand) == 0 ) {
+					continue;
 				}
 
-				object_code_num++;
+				if( get_address_of_register(operand) >= 0 ) {
+					continue;
+				}
+
+				// immediate 타입 패스
+				if( operand[0] == '#' ) {
+					continue;
+				}
+
+				// literal 패스
+				if( operand[0] == '=' ) {
+					continue;
+				}
+
+				char* real_symbol = operand;
+				if( real_symbol[0] == '@' ) {
+					real_symbol++;
+				}
+				if( real_symbol[0] == '+' || real_symbol[0] == '-' ) {
+					real_symbol++;
+				}
+
+
+				if( get_symbol_address(real_symbol, control_section_num) < 0 ) {
+					object_codes[object_code_num].control_section_num = control_section_num;
+					object_codes[object_code_num].type = 'M';
+					object_codes[object_code_num].code = 0;
+					object_codes[object_code_num].length = 0;
+					object_codes[object_code_num].address = location_counter;
+					if( operand[0] == '-' ) {
+						object_codes[object_code_num].symbol[0] = '-';
+						strcpy( object_codes[object_code_num].symbol + 1, real_symbol );
+					} else {
+						object_codes[object_code_num].symbol[0] = '+';
+						strcpy( object_codes[object_code_num].symbol + 1, real_symbol );
+					}
+
+					if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_WORD_STRING) == 0 
+						|| get_format_of_object_code(code) == 3 ) {
+						object_codes[object_code_num].target_address = location_counter + 1;
+						object_codes[object_code_num].modify_length = 6;
+					} else if( get_format_of_object_code(code) == 4 ) {
+						object_codes[object_code_num].target_address = location_counter + 1;
+						object_codes[object_code_num].modify_length = 5;
+					}
+
+					object_code_num++;
+				}
 			}
 		}
 
-		location_counter += get_format_of_object_code(code);
+		location_counter += increase_locctr_by_opcode(curr_token);
+	}
+
+	for( int j = 0; j < symbol_num; j ++ ) {
+		if( csect_of_symbol[j] == control_section_num && sym_table[j].symbol[0] == '=' ) {
+			int code = 0;
+			int size = 0;
+			if( sym_table[j].symbol[1] == 'C' ) {
+				code += get_object_code_of_string(sym_table[j].symbol + 1);
+				size = strlen(sym_table[j].symbol) - 4;
+			} else if( sym_table[j].symbol[1] == 'X' ) {
+				code += get_object_code_of_byte(sym_table[j].symbol + 1);
+				size = (strlen(sym_table[j].symbol) - 4) / 2;
+			}
+
+			object_codes[object_code_num].control_section_num = control_section_num;
+			object_codes[object_code_num].type = 'T';
+			object_codes[object_code_num].code = code;
+			object_codes[object_code_num].length = get_format_of_object_code(code);
+			object_codes[object_code_num].address = location_counter;
+			object_code_num++;
+
+			// 글자부분만 계산
+			location_counter += size;
+			prev_header_unit->target_address = location_counter;
+		}
 	}
 
 	return 0;
@@ -677,7 +737,7 @@ void make_objectcode(char *file_name)
 			if( i != 0 ) {
 				fprintf(fp, "\n");
 			}
-			fprintf(fp, "H %-6s %06d %06X\n", unit->symbol, 0, unit->address);
+			fprintf(fp, "H %-6s %06d %06X\n", unit->symbol, 0, unit->target_address);
 			continue;
 		} else if( unit->type == 'D' ) {
 			continue;
