@@ -120,7 +120,7 @@ static int assem_pass1(void)
 static int assem_pass2(void)
 {
 	int location_counter = 0;
-	int control_section_num = 0;
+	int control_section_num = -1; // trick
 
 	for( int i = 0; i < token_line; i ++ ) {
 		token *curr_token = token_table[i];
@@ -128,9 +128,63 @@ static int assem_pass2(void)
 			continue;
 		}
 
+		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_START_STRING) == 0
+			|| strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_CSECT_STRING) == 0 ) {
+			object_codes[object_code_num].control_section_num = control_section_num;
+			object_codes[object_code_num].type = 'H';
+			strcpy( object_codes[object_code_num].symbol, curr_token->label );
+			object_codes[object_code_num].length = 0;
+			object_codes[object_code_num].address = location_counter;
+			object_code_num++;
+
+			location_counter = 0;
+			control_section_num++;
+			continue;
+		}
+
+		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_EXTDEF_STRING) == 0 ) {
+			for( int j = 0; j < MAX_OPERAND; j ++ ) {
+				if( ! curr_token->operand[j] ) {
+					continue;
+				}
+
+				const char* operand = curr_token->operand[j];
+				object_codes[object_code_num].control_section_num = control_section_num;
+				object_codes[object_code_num].type = 'D';
+				strcpy( object_codes[object_code_num].symbol, operand );
+				object_codes[object_code_num].length = 0;
+				object_codes[object_code_num].address = location_counter;
+				object_code_num++;
+			}
+
+			continue;
+		}
+
+		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_EXTREF_STRING) == 0 ) {
+			for( int j = 0; j < MAX_OPERAND; j ++ ) {
+				if( ! curr_token->operand[j] ) {
+					continue;
+				}
+
+				const char* operand = curr_token->operand[j];
+				object_codes[object_code_num].control_section_num = control_section_num;
+				object_codes[object_code_num].type = 'R';
+				strcpy( object_codes[object_code_num].symbol, operand );
+				object_codes[object_code_num].length = 0;
+				object_codes[object_code_num].address = location_counter;
+				object_code_num++;
+			}
+
+			continue;
+		}
+
+		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_EQU_STRING) == 0 ){
+			continue;
+		}
+
 		int code = get_object_code(curr_token,
 			location_counter,
-			control_section_num);
+			control_section_num);		
 
 		if( curr_token->label ) {
 			printf("%s\t", curr_token->label);
@@ -145,11 +199,89 @@ static int assem_pass2(void)
 		if( code < 0 ) {
 			printf("\n");
 		} else {
-			printf("0x%08X\n", code);
+			printf("0x%08X %d\n", code, control_section_num);
+
+			object_codes[object_code_num].control_section_num = control_section_num;
+			object_codes[object_code_num].type = 'T';
+			object_codes[object_code_num].code = code;
+			object_codes[object_code_num].length = get_format_of_object_code(code);
+			object_codes[object_code_num].address = location_counter;
+			object_code_num++;
 		}
+
+		// exceptions of modification row
+		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_RESW_STRING) == 0 
+			|| strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_RESB_STRING) == 0 ) {
+			continue;
+		}
+
+		for( int j = 0; j < MAX_OPERAND; j ++ ) {
+			if( ! curr_token->operand[j] ) {
+				continue;
+			}
+
+			char* operand = curr_token->operand[j];
+			if( get_address_of_register(operand) >= 0 ) {
+				continue;
+			}
+
+			if( operand[0] == '#' ) {
+				continue;
+			}
+
+			if( operand[0] == '@' ) {
+				operand++;
+			}
+
+
+			printf("%d %06X %s\n", control_section_num, get_symbol_address(operand, control_section_num), operand);
+			if( get_symbol_address(operand, control_section_num) < 0 ) {
+				// pass literal
+				if( strlen(operand) == 0 ) {
+					continue;
+				} 
+				// else if( operand[0] == 'C' ) {
+				// 	continue;
+				// } else if( operand[0] == 'X' ) {
+				// 	continue;
+				// } else if( operand[0] == '*' ) {
+				// 	continue;
+				// } else if( operand[0] == '#' ) {
+				// 	continue;
+				// } else if( operand[0] == '=' ) {
+				// 	continue;
+				// }
+
+				// external reference
+				printf("EXTREF %s\n", operand);
+				object_codes[object_code_num].control_section_num = control_section_num;
+				object_codes[object_code_num].type = 'M';
+				object_codes[object_code_num].code = 0;
+				object_codes[object_code_num].length = 0;
+				object_codes[object_code_num].address = location_counter;
+				if( operand[0] == '-' ) {
+					object_codes[object_code_num].symbol[0] = '-';
+					strcpy( object_codes[object_code_num].symbol + 1, operand + 1 );
+				} else {
+					object_codes[object_code_num].symbol[0] = '+';
+					strcpy( object_codes[object_code_num].symbol + 1, operand );
+				}
+				if( get_format_of_object_code(code) == 4 ) {
+					object_codes[object_code_num].target_address = location_counter + 1;
+					object_codes[object_code_num].modify_length = 5;
+				} else if( get_format_of_object_code(code) == 3 ) {
+					object_codes[object_code_num].target_address = location_counter + 1;
+					object_codes[object_code_num].modify_length = 6;
+				}
+
+				object_code_num++;
+			}
+		}
+
+		location_counter += get_format_of_object_code(code);
 	}
 
-	return -1;
+	return 0;
 }
 /* -----------------------------------------------------------------------------------
  * 설명 : 머신을 위한 기계 코드목록 파일을 읽어 기계어 목록 테이블(inst_table)을 
@@ -452,6 +584,43 @@ void make_objectcode(char *file_name)
 		// error!
 		return;
 	}
+
+	int length = 0;
+	for( int i = 0; i < object_code_num; i ++ ) {
+		object_code *unit = &object_codes[i];
+		if( unit->type == 'H' ) {
+			fprintf(fp, "H %-6s %06d %06X\n", unit->symbol, 0, unit->address);
+			continue;
+		} else if( unit->type == 'D' ) {
+			continue;
+		} else if( unit->type == 'R' ) {
+			fprintf(fp, "R %-6s %06d %06X\n", unit->symbol, 0, unit->address);
+			continue;
+		} else if( unit->type == 'T' ) {
+			int object_code = unit->code;
+			if( (object_code & 0xFF000000) > 0 ) {
+				// format 4
+				fprintf(fp, "T %08X\n", object_code);
+			}
+			else if( (object_code & 0x00FF0000) > 0 ) {
+				// format 3
+				fprintf(fp, "T %06X\n", object_code);
+			}
+			else {
+				// format 2
+				fprintf(fp, "T %04X\n", object_code);
+			}
+			continue;
+		} else if( unit->type == 'M' ) {
+			fprintf(fp, "M %06X %02X %s\n", 
+				unit->target_address, 
+				unit->modify_length, 
+				unit->symbol);
+			continue;
+		} else if( unit->type == 'E' ) {
+			continue;
+		}
+	}
 }
 
 
@@ -650,6 +819,18 @@ int get_format_of_instruction(int i) {
 	char **curr = inst[i];
 	char *format_str = curr[OPCODE_COLUMN_FORMAT];
 	return format_str[0] - '0';
+}
+
+int get_format_of_object_code(int code) {
+	if( (code & 0xFF000000) > 0 ) {
+		return 4;
+	} else if( (code & 0x00FF0000) > 0 ) {
+		return 3;
+	} else if( (code & 0x0000FF00) > 0 ) {
+		return 2;
+	}
+
+	return 3;
 }
 
 int get_address_of_register(const char* reg) {

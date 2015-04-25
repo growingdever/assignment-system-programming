@@ -20,6 +20,8 @@
 #define MAX_LENGTH_OPERAND 13
 #define MAX_LENGTH_OPERAND_NULL 14
 
+#define MAX_LENGTH_OBJECT_CODE_LINE 30
+
 #define LINE_SCANF_REGEX "%6[0-9a-zA-Z ] %6[0-9a-zA-Z] %13[0-9a-zA-Z,\']"
 
 #define ASSEMBLY_DIRECTIVE_START_STRING "START"
@@ -32,6 +34,7 @@
 #define ASSEMBLY_DIRECTIVE_EXTDEF_STRING "EXTDEF"
 #define ASSEMBLY_DIRECTIVE_EXTREF_STRING "EXTREF"
 #define ASSEMBLY_DIRECTIVE_CSECT_STRING "CSECT"
+#define ASSEMBLY_DIRECTIVE_EQU_STRING "EQU"
 
 #define INSTRUCTION_TABLE_FILE_PATH "inst.data"
 #define INPUT_FILE_PATH "program_in.txt"
@@ -94,6 +97,24 @@ static int curr_csect;
 char *literal_table[MAX_LINES];
 static int literal_num;
 
+/*
+ * 오브젝트코드 생성을 위한 유틸
+ */
+struct object_code_unit {
+	int control_section_num;
+	int type; // H, D, R, T, M, E
+	char symbol[MAX_LENGTH_OPERAND_NULL];
+	int code;
+	int length;
+	int address;
+	int target_address;
+	int modify_length;
+};
+typedef struct object_code_unit object_code;
+object_code object_codes[MAX_LINES];
+static int object_code_num;
+//--------------
+
 static char *input_file;
 static char *output_file;
 
@@ -116,6 +137,7 @@ int get_symbol_address(const char* symbol, int control_secion_num);
 int get_object_code(token *tok, int location_counter, int control_section_num);
 int get_opcode_of_instruction(int i);
 int get_format_of_instruction(int i);
+int get_format_of_object_code(int code);
 int get_address_of_register(const char* reg);
 int get_num_of_operand_of_instruction(int i);
 int get_instruction_size(const char* operator);
