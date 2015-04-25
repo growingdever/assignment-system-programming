@@ -166,7 +166,7 @@ static int assem_pass2(void)
 				object_codes[object_code_num].type = 'D';
 				strcpy( object_codes[object_code_num].symbol, operand );
 				object_codes[object_code_num].length = 0;
-				object_codes[object_code_num].address = location_counter;
+				object_codes[object_code_num].address = get_symbol_address(operand, control_section_num);
 				object_code_num++;
 			}
 
@@ -207,7 +207,7 @@ static int assem_pass2(void)
 						code += get_object_code_of_byte(sym_table[j].symbol + 1);
 						size = (strlen(sym_table[j].symbol) - 4) / 2;
 					}
-					
+
 					object_codes[object_code_num].control_section_num = control_section_num;
 					object_codes[object_code_num].type = 'T';
 					object_codes[object_code_num].code = code;
@@ -740,6 +740,7 @@ void make_objectcode(char *file_name)
 			fprintf(fp, "H %-6s %06d %06X\n", unit->symbol, 0, unit->target_address);
 			continue;
 		} else if( unit->type == 'D' ) {
+			fprintf(fp, "D %-6s %06d %06X\n", unit->symbol, 0, unit->address);
 			continue;
 		} else if( unit->type == 'R' ) {
 			fprintf(fp, "R %-6s %06d %06X\n", unit->symbol, 0, unit->address);
