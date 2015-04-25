@@ -652,10 +652,28 @@ void make_objectcode(char *file_name)
 		return;
 	}
 
+	int modification_row_index_arr[MAX_LINES];
+	int num_of_modification_row = 0;
+
 	int length = 0;
 	for( int i = 0; i < object_code_num; i ++ ) {
 		object_code *unit = &object_codes[i];
 		if( unit->type == 'H' ) {
+			// print all modifiation row
+			for( int j = 0; j < num_of_modification_row; j ++ ) {
+				unit = &object_codes[ modification_row_index_arr[j] ];
+				fprintf(fp, "M %06X %02X %s\n", 
+					unit->target_address, 
+					unit->modify_length, 
+					unit->symbol);
+			}
+
+			memset(modification_row_index_arr, 0, sizeof(modification_row_index_arr));
+			num_of_modification_row = 0;
+
+			if( i != 0 ) {
+				fprintf(fp, "\n");
+			}
 			fprintf(fp, "H %-6s %06d %06X\n", unit->symbol, 0, unit->address);
 			continue;
 		} else if( unit->type == 'D' ) {
@@ -679,15 +697,25 @@ void make_objectcode(char *file_name)
 			}
 			continue;
 		} else if( unit->type == 'M' ) {
-			fprintf(fp, "M %06X %02X %s\n", 
-				unit->target_address, 
-				unit->modify_length, 
-				unit->symbol);
+			modification_row_index_arr[ num_of_modification_row++ ] = i;
 			continue;
 		} else if( unit->type == 'E' ) {
 			continue;
 		}
 	}
+
+	// print all modifiation row
+	object_code *unit = NULL;
+	for( int j = 0; j < num_of_modification_row; j ++ ) {
+		unit = &object_codes[ modification_row_index_arr[j] ];
+		fprintf(fp, "M %06X %02X %s\n", 
+			unit->target_address, 
+			unit->modify_length, 
+			unit->symbol);
+	}
+
+	memset(modification_row_index_arr, 0, sizeof(modification_row_index_arr));
+	num_of_modification_row = 0;
 }
 
 
