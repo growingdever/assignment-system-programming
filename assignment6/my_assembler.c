@@ -142,6 +142,10 @@ static int assem_pass2(void)
 			continue;
 		}
 
+		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_END_STRING) == 0 ) {
+			continue;
+		}
+
 		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_EXTDEF_STRING) == 0 ) {
 			for( int j = 0; j < MAX_OPERAND; j ++ ) {
 				if( ! curr_token->operand[j] ) {
@@ -211,7 +215,8 @@ static int assem_pass2(void)
 
 		// exceptions of modification row
 		if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_RESW_STRING) == 0 
-			|| strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_RESB_STRING) == 0 ) {
+			|| strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_RESB_STRING) == 0
+			|| strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_BYTE_STRING) == 0 ) {
 			continue;
 		}
 
@@ -221,39 +226,34 @@ static int assem_pass2(void)
 			}
 
 			char* operand = curr_token->operand[j];
+			if( strlen(operand) == 0 ) {
+				continue;
+			}
+
 			if( get_address_of_register(operand) >= 0 ) {
 				continue;
 			}
 
+			// immediate 타입 패스
 			if( operand[0] == '#' ) {
 				continue;
 			}
 
-			if( operand[0] == '@' ) {
-				operand++;
+			// literal 패스
+			if( operand[0] == '=' ) {
+				continue;
+			}
+
+			char* real_symbol = operand;
+			if( real_symbol[0] == '@' ) {
+				real_symbol++;
+			}
+			if( real_symbol[0] == '+' || real_symbol[0] == '-' ) {
+				real_symbol++;
 			}
 
 
-			printf("%d %06X %s\n", control_section_num, get_symbol_address(operand, control_section_num), operand);
-			if( get_symbol_address(operand, control_section_num) < 0 ) {
-				// pass literal
-				if( strlen(operand) == 0 ) {
-					continue;
-				} 
-				// else if( operand[0] == 'C' ) {
-				// 	continue;
-				// } else if( operand[0] == 'X' ) {
-				// 	continue;
-				// } else if( operand[0] == '*' ) {
-				// 	continue;
-				// } else if( operand[0] == '#' ) {
-				// 	continue;
-				// } else if( operand[0] == '=' ) {
-				// 	continue;
-				// }
-
-				// external reference
-				printf("EXTREF %s\n", operand);
+			if( get_symbol_address(real_symbol, control_section_num) < 0 ) {
 				object_codes[object_code_num].control_section_num = control_section_num;
 				object_codes[object_code_num].type = 'M';
 				object_codes[object_code_num].code = 0;
@@ -261,17 +261,19 @@ static int assem_pass2(void)
 				object_codes[object_code_num].address = location_counter;
 				if( operand[0] == '-' ) {
 					object_codes[object_code_num].symbol[0] = '-';
-					strcpy( object_codes[object_code_num].symbol + 1, operand + 1 );
+					strcpy( object_codes[object_code_num].symbol + 1, real_symbol );
 				} else {
 					object_codes[object_code_num].symbol[0] = '+';
-					strcpy( object_codes[object_code_num].symbol + 1, operand );
+					strcpy( object_codes[object_code_num].symbol + 1, real_symbol );
 				}
-				if( get_format_of_object_code(code) == 4 ) {
-					object_codes[object_code_num].target_address = location_counter + 1;
-					object_codes[object_code_num].modify_length = 5;
-				} else if( get_format_of_object_code(code) == 3 ) {
+
+				if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_WORD_STRING) == 0 
+					|| get_format_of_object_code(code) == 3 ) {
 					object_codes[object_code_num].target_address = location_counter + 1;
 					object_codes[object_code_num].modify_length = 6;
+				} else if( get_format_of_object_code(code) == 4 ) {
+					object_codes[object_code_num].target_address = location_counter + 1;
+					object_codes[object_code_num].modify_length = 5;
 				}
 
 				object_code_num++;
@@ -502,10 +504,35 @@ void token_parsing_assembly_directive(const char* line) {
 void tokenizing_operand(const char* operand, char* target[MAX_OPERAND]) {
 	int num_of_operand = get_num_of_operand(operand);
 	if( num_of_operand == 1 ) {
-		target[0] = strdup(operand);
+		// 수식인 operand인지도 체크
+		if( is_expression(operand) ) {
+			// 수식이면 수식 나눠서 넣어줘야함.
+			unsigned int length = strlen(operand);
+			int count = 0, index = 0;
+			for( int i = 0; i < length; i ++ ) {
+				if( is_alphabet_and_number(operand[i]) ) {
+					count++;
+					continue;
+				}
 
-		// 리터럴 추가
-		add_literal_if_not_exist(operand);
+				target[index] = (char*)malloc( sizeof(char) * MAX_LENGTH_LABEL_NULL );
+				strncpy(target[index], operand + i - count, count);
+				*(target[index] + count) = '\0';
+
+				count = 1;
+				index++;
+			}
+
+			target[index] = (char*)malloc( sizeof(char) * MAX_LENGTH_LABEL_NULL );
+			strncpy(target[index], operand + length - count, count);
+			*(target[index] + count) = '\0';
+		} else {
+			// 진짜 하나짜리 operand
+			target[0] = strdup(operand);
+
+			// 리터럴 추가
+			add_literal_if_not_exist(operand);
+		}
 
 		return;
 	}
@@ -537,6 +564,46 @@ int get_num_of_operand(const char* operand) {
 	}
 
 	return count;
+}
+
+int get_num_of_non_alphabet_and_number(const char* operand) {
+	int count = 1;
+	unsigned int length = strlen(operand);
+	for( int i = 0; i < length; i ++ ) {
+		char c = operand[i];
+		if( is_alphabet_and_number(c) ) {
+			continue;
+		}
+
+		count++;
+	}
+
+	return count;
+}
+
+int is_alphabet_and_number(char c) {
+	if( c >= '0' && c <= '9' ) {
+		return 1;
+	}
+	if( c >= 'A' && c <= 'Z' ) {
+		return 1;
+	}
+	if( c >= 'a' && c <= 'z' ) {
+		return 1;
+	}
+
+	return 0;
+}
+
+int is_expression(const char* operand) {
+	unsigned int length = strlen(operand);
+	for( int i = 0; i < length; i ++ ) {
+		if( operand[i] == '+' || operand[i] == '-' ) {
+			return 1;
+		}
+	}
+
+	return 0;
 }
 /* -----------------------------------------------------------------------------------
  * 설명 : 입력 문자열이 기계어 코드인지를 검사하는 함수이다. 
