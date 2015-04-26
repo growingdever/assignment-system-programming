@@ -1002,7 +1002,7 @@ int get_format_of_object_code(int code) {
 		return 2;
 	}
 
-	return 3;
+	return 1;
 }
 
 int get_address_of_register(const char* reg) {
