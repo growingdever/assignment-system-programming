@@ -746,18 +746,15 @@ void make_objectcode(char *file_name)
 			fprintf(fp, "R %-6s %06d %06X\n", unit->symbol, 0, unit->address);
 			continue;
 		} else if( unit->type == 'T' ) {
+			if( print_text_row_header ) {
+				fprintf(fp, "T %06X ", unit->address);
+				print_text_row_header = 0;
+			}
+
 			int object_code = unit->code;
-			if( (object_code & 0xFF000000) > 0 ) {
-				// format 4
-				fprintf(fp, "T %08X\n", object_code);
-			}
-			else if( (object_code & 0x00FF0000) > 0 ) {
-				// format 3
-				fprintf(fp, "T %06X\n", object_code);
-			}
-			else {
-				// format 2
-				fprintf(fp, "T %04X\n", object_code);
+			char regex[16];
+			sprintf(regex, "%%0%dX", unit->length * 2);
+			fprintf(fp, regex, object_code);
 			}
 			continue;
 		} else if( unit->type == 'M' ) {
