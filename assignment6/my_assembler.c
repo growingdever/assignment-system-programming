@@ -123,6 +123,7 @@ static int assem_pass2(void)
 	int control_section_num = -1; // trick
 
 	object_code *prev_header_unit = NULL;
+	object_code *last_first_unit = NULL;
 
 	for( int i = 0; i < token_line; i ++ ) {
 		token *curr_token = token_table[i];
@@ -147,6 +148,8 @@ static int assem_pass2(void)
 
 			location_counter = 0;
 			control_section_num++;
+
+			last_first_unit = NULL;
 			continue;
 		}
 
@@ -214,6 +217,7 @@ static int assem_pass2(void)
 					object_codes[object_code_num].length = get_format_of_object_code(code);
 					object_codes[object_code_num].address = location_counter;
 					object_codes[object_code_num].by_ltorg = 1;
+					object_codes[object_code_num].is_first = 1;
 					object_code_num++;
 
 					// 글자부분만 계산
@@ -239,14 +243,32 @@ static int assem_pass2(void)
 
 		if( code < 0 ) {
 			printf("\n");
+			if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_WORD_STRING) == 0 ) {
+				object_codes[object_code_num].control_section_num = control_section_num;
+				object_codes[object_code_num].type = 'T';
+				object_codes[object_code_num].code = atoi(curr_token->operand[0]);
+				object_codes[object_code_num].length = 3;
+				object_codes[object_code_num].address = location_counter;
+				object_code_num++;
+			}
 		} else {
 			printf("0x%08X %d\n", code, control_section_num);
+
+			int length = get_format_of_object_code(code);
 
 			object_codes[object_code_num].control_section_num = control_section_num;
 			object_codes[object_code_num].type = 'T';
 			object_codes[object_code_num].code = code;
-			object_codes[object_code_num].length = get_format_of_object_code(code);
+			object_codes[object_code_num].length = length;
 			object_codes[object_code_num].address = location_counter;
+
+			if( ! last_first_unit 
+				|| (last_first_unit && 
+					location_counter - last_first_unit->address + length > MAX_LENGTH_OBJECT_CODE_LINE) ) {
+				object_codes[object_code_num].is_first = 1;
+				last_first_unit = &object_codes[object_code_num];
+			}
+			
 			object_code_num++;
 		}
 
@@ -336,6 +358,7 @@ static int assem_pass2(void)
 			object_codes[object_code_num].code = code;
 			object_codes[object_code_num].length = get_format_of_object_code(code);
 			object_codes[object_code_num].address = location_counter;
+			// object_codes[object_code_num].by_ltorg = 1;
 			object_code_num++;
 
 			// 글자부분만 계산
@@ -716,12 +739,14 @@ void make_objectcode(char *file_name)
 	int modification_row_index_arr[MAX_LINES];
 	int num_of_modification_row = 0;
 
-	int length = 0;
 	for( int i = 0; i < object_code_num; i ++ ) {
 		object_code *unit = &object_codes[i];
 		if( unit->type == 'H' ) {
 			// print all modifiation row
 			for( int j = 0; j < num_of_modification_row; j ++ ) {
+				if( j == 0 ) {
+					fprintf(fp, "\n");
+				}
 				unit = &object_codes[ modification_row_index_arr[j] ];
 				fprintf(fp, "M %06X %02X %s\n", 
 					unit->target_address, 
@@ -747,16 +772,33 @@ void make_objectcode(char *file_name)
 			fprintf(fp, "R %-6s %06d %06X\n", unit->symbol, 0, unit->address);
 			continue;
 		} else if( unit->type == 'T' ) {
-			if( print_text_row_header ) {
-				fprintf(fp, "T %06X ", unit->address);
-				print_text_row_header = 0;
+			char regex_first[] = "\nT %06X %02X ";
+
+			if( unit->by_ltorg ) {
+				fprintf(fp, regex_first, unit->address, unit->length);
+			} else if( unit->is_first ) {
+				int length = unit->length;
+				int start_address = unit->address;
+				int j;
+				for( j = i + 1; j < object_code_num; j ++ ) {
+					length += object_codes[j].length;
+					if( object_codes[j].is_first || object_codes[j].by_ltorg ) {
+						length -= object_codes[j].length;
+						break;
+					}
+				}
+
+				if( j == object_code_num ) {
+					length = (object_codes[j - 1].address + object_codes[j - 1].length - start_address);
+				}
+
+				fprintf(fp, regex_first, start_address, length);
 			}
 
 			int object_code = unit->code;
 			char regex[16];
 			sprintf(regex, "%%0%dX", unit->length * 2);
 			fprintf(fp, regex, object_code);
-			}
 			continue;
 		} else if( unit->type == 'M' ) {
 			modification_row_index_arr[ num_of_modification_row++ ] = i;
@@ -765,6 +807,8 @@ void make_objectcode(char *file_name)
 			continue;
 		}
 	}
+
+	fprintf(fp, "\n");
 
 	// print all modifiation row
 	object_code *unit = NULL;

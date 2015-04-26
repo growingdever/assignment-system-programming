@@ -109,6 +109,8 @@ struct object_code_unit {
 	int address;
 	int target_address;
 	int modify_length;
+	int by_ltorg;
+	int is_first;
 };
 typedef struct object_code_unit object_code;
 object_code object_codes[MAX_LINES];
