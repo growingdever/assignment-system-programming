@@ -303,7 +303,7 @@ static int assem_pass2(void)
 
 					if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_WORD_STRING) == 0 
 						|| get_format_of_object_code(code) == 3 ) {
-						object_codes[object_code_num].target_address = location_counter + 1;
+						object_codes[object_code_num].target_address = location_counter;
 						object_codes[object_code_num].modify_length = 6;
 					} else if( get_format_of_object_code(code) == 4 ) {
 						object_codes[object_code_num].target_address = location_counter + 1;
