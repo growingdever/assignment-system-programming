@@ -358,7 +358,6 @@ static int assem_pass2(void)
 			object_codes[object_code_num].code = code;
 			object_codes[object_code_num].length = get_format_of_object_code(code);
 			object_codes[object_code_num].address = location_counter;
-			// object_codes[object_code_num].by_ltorg = 1;
 			object_code_num++;
 
 			// 글자부분만 계산
@@ -748,7 +747,7 @@ void make_objectcode(char *file_name)
 					fprintf(fp, "\n");
 				}
 				unit = &object_codes[ modification_row_index_arr[j] ];
-				fprintf(fp, "M %06X %02X %s\n", 
+				fprintf(fp, "M%06X%02X%s\n", 
 					unit->target_address, 
 					unit->modify_length, 
 					unit->symbol);
@@ -757,22 +756,43 @@ void make_objectcode(char *file_name)
 			memset(modification_row_index_arr, 0, sizeof(modification_row_index_arr));
 			num_of_modification_row = 0;
 
+			if( i > 0 ) {
+				fprintf(fp, "E");
+				if( unit->control_section_num == 0 ) {
+					fprintf(fp, "%06X", 0);
+				}
+				fprintf(fp, "\n");
+			}
+
 			// 원래 헤더 코드 복구
 			unit = &object_codes[i];
 
 			if( i != 0 ) {
 				fprintf(fp, "\n");
 			}
-			fprintf(fp, "H %-6s %06d %06X\n", unit->symbol, 0, unit->target_address);
+			fprintf(fp, "H%-6s%06d%06X\n", unit->symbol, 0, unit->target_address);
 			continue;
 		} else if( unit->type == 'D' ) {
-			fprintf(fp, "D %-6s %06d %06X\n", unit->symbol, 0, unit->address);
+			fprintf(fp, "D");
+			fprintf(fp, "%-6s%06X", unit->symbol, unit->address);
+			while( object_codes[++i].type == 'D' ) {
+				unit = &object_codes[i];
+				fprintf(fp, "%-6s%06X", unit->symbol, unit->address);
+			}
+			i--;
+			fprintf(fp, "\n");
 			continue;
 		} else if( unit->type == 'R' ) {
-			fprintf(fp, "R %-6s %06d %06X\n", unit->symbol, 0, unit->address);
+			fprintf(fp, "R");
+			fprintf(fp, "%-6s", unit->symbol);
+			while( object_codes[++i].type == 'R' ) {
+				unit = &object_codes[i];
+				fprintf(fp, "%-6s", unit->symbol);
+			}
+			i--;
 			continue;
 		} else if( unit->type == 'T' ) {
-			char regex_first[] = "\nT %06X %02X ";
+			char regex_first[] = "\nT%06X%02X";
 
 			if( unit->by_ltorg ) {
 				fprintf(fp, regex_first, unit->address, unit->length);
@@ -814,7 +834,7 @@ void make_objectcode(char *file_name)
 	object_code *unit = NULL;
 	for( int j = 0; j < num_of_modification_row; j ++ ) {
 		unit = &object_codes[ modification_row_index_arr[j] ];
-		fprintf(fp, "M %06X %02X %s\n", 
+		fprintf(fp, "M%06X%02X%s\n", 
 			unit->target_address, 
 			unit->modify_length, 
 			unit->symbol);
@@ -822,6 +842,8 @@ void make_objectcode(char *file_name)
 
 	memset(modification_row_index_arr, 0, sizeof(modification_row_index_arr));
 	num_of_modification_row = 0;
+
+	fprintf(fp, "E\n");
 }
 
 
