@@ -213,6 +213,7 @@ static int assem_pass2(void)
 					object_codes[object_code_num].code = code;
 					object_codes[object_code_num].length = get_format_of_object_code(code);
 					object_codes[object_code_num].address = location_counter;
+					object_codes[object_code_num].by_ltorg = 1;
 					object_code_num++;
 
 					// 글자부분만 계산
