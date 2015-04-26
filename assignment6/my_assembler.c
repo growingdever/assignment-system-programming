@@ -139,12 +139,8 @@ static int assem_pass2(void)
 			}
 			prev_header_unit = &object_codes[object_code_num];
 
-			object_codes[object_code_num].control_section_num = control_section_num;
-			object_codes[object_code_num].type = 'H';
-			strcpy( object_codes[object_code_num].symbol, curr_token->label );
-			object_codes[object_code_num].length = 0;
-			object_codes[object_code_num].address = location_counter;
-			object_code_num++;
+			object_code *unit = add_object_code_unit(control_section_num, 'H', 0, 0, location_counter);
+			strcpy( unit->symbol, curr_token->label );
 
 			location_counter = 0;
 			control_section_num++;
@@ -164,13 +160,8 @@ static int assem_pass2(void)
 					continue;
 				}
 
-				const char* operand = curr_token->operand[j];
-				object_codes[object_code_num].control_section_num = control_section_num;
-				object_codes[object_code_num].type = 'D';
-				strcpy( object_codes[object_code_num].symbol, operand );
-				object_codes[object_code_num].length = 0;
-				object_codes[object_code_num].address = get_symbol_address(operand, control_section_num);
-				object_code_num++;
+				object_code *unit = add_object_code_unit(control_section_num, 'D', 0, 0, location_counter);
+				strcpy( unit->symbol, curr_token->operand[j] );
 			}
 
 			continue;
@@ -182,13 +173,8 @@ static int assem_pass2(void)
 					continue;
 				}
 
-				const char* operand = curr_token->operand[j];
-				object_codes[object_code_num].control_section_num = control_section_num;
-				object_codes[object_code_num].type = 'R';
-				strcpy( object_codes[object_code_num].symbol, operand );
-				object_codes[object_code_num].length = 0;
-				object_codes[object_code_num].address = location_counter;
-				object_code_num++;
+				object_code *unit = add_object_code_unit(control_section_num, 'R', 0, 0, location_counter);
+				strcpy( unit->symbol, curr_token->operand[j] );
 			}
 
 			continue;
@@ -211,14 +197,9 @@ static int assem_pass2(void)
 						size = (strlen(sym_table[j].symbol) - 4) / 2;
 					}
 
-					object_codes[object_code_num].control_section_num = control_section_num;
-					object_codes[object_code_num].type = 'T';
-					object_codes[object_code_num].code = code;
-					object_codes[object_code_num].length = get_format_of_object_code(code);
-					object_codes[object_code_num].address = location_counter;
-					object_codes[object_code_num].by_ltorg = 1;
-					object_codes[object_code_num].is_first = 1;
-					object_code_num++;
+					object_code *unit = add_object_code_unit(control_section_num, 'T', code, get_format_of_object_code(code), location_counter);
+					unit->by_ltorg = 1;
+					unit->is_first = 1;
 
 					// 글자부분만 계산
 					location_counter += size;
@@ -244,29 +225,20 @@ static int assem_pass2(void)
 		if( code < 0 ) {
 			printf("\n");
 			if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_WORD_STRING) == 0 ) {
-				object_codes[object_code_num].control_section_num = control_section_num;
-				object_codes[object_code_num].type = 'T';
-				object_codes[object_code_num].code = atoi(curr_token->operand[0]);
-				object_codes[object_code_num].length = 3;
-				object_codes[object_code_num].address = location_counter;
-				object_code_num++;
+				add_object_code_unit(control_section_num, 'T', atoi(curr_token->operand[0]), 3, location_counter);
 			}
 		} else {
 			printf("0x%08X %d\n", code, control_section_num);
 
 			int length = get_format_of_object_code(code);
-
-			object_codes[object_code_num].control_section_num = control_section_num;
-			object_codes[object_code_num].type = 'T';
-			object_codes[object_code_num].code = code;
-			object_codes[object_code_num].length = length;
-			object_codes[object_code_num].address = location_counter;
+			object_code *unit = add_object_code_unit(control_section_num, 
+						'T', code, length, location_counter);
 
 			if( ! last_first_unit 
 				|| (last_first_unit && 
 					location_counter - last_first_unit->address + length > MAX_LENGTH_OBJECT_CODE_LINE) ) {
-				object_codes[object_code_num].is_first = 1;
-				last_first_unit = &object_codes[object_code_num];
+				unit->is_first = 1;
+				last_first_unit = unit;
 			}
 			
 			object_code_num++;
@@ -311,26 +283,24 @@ static int assem_pass2(void)
 
 
 				if( get_symbol_address(real_symbol, control_section_num) < 0 ) {
-					object_codes[object_code_num].control_section_num = control_section_num;
-					object_codes[object_code_num].type = 'M';
-					object_codes[object_code_num].code = 0;
-					object_codes[object_code_num].length = 0;
-					object_codes[object_code_num].address = location_counter;
+					object_code *unit = add_object_code_unit(control_section_num, 
+						'M', 0, 0, location_counter);
+
 					if( operand[0] == '-' ) {
-						object_codes[object_code_num].symbol[0] = '-';
-						strcpy( object_codes[object_code_num].symbol + 1, real_symbol );
+						unit->symbol[0] = '-';
+						strcpy( unit->symbol + 1, real_symbol );
 					} else {
-						object_codes[object_code_num].symbol[0] = '+';
-						strcpy( object_codes[object_code_num].symbol + 1, real_symbol );
+						unit->symbol[0] = '+';
+						strcpy( unit->symbol + 1, real_symbol );
 					}
 
 					if( strcmp(curr_token->operator, ASSEMBLY_DIRECTIVE_WORD_STRING) == 0 
 						|| get_format_of_object_code(code) == 3 ) {
-						object_codes[object_code_num].target_address = location_counter;
-						object_codes[object_code_num].modify_length = 6;
+						unit->target_address = location_counter;
+						unit->modify_length = 6;
 					} else if( get_format_of_object_code(code) == 4 ) {
-						object_codes[object_code_num].target_address = location_counter + 1;
-						object_codes[object_code_num].modify_length = 5;
+						unit->target_address = location_counter + 1;
+						unit->modify_length = 5;
 					}
 
 					object_code_num++;
@@ -353,12 +323,7 @@ static int assem_pass2(void)
 				size = (strlen(sym_table[j].symbol) - 4) / 2;
 			}
 
-			object_codes[object_code_num].control_section_num = control_section_num;
-			object_codes[object_code_num].type = 'T';
-			object_codes[object_code_num].code = code;
-			object_codes[object_code_num].length = get_format_of_object_code(code);
-			object_codes[object_code_num].address = location_counter;
-			object_code_num++;
+			add_object_code_unit(control_section_num, 'T', code, get_format_of_object_code(code), location_counter);
 
 			// 글자부분만 계산
 			location_counter += size;
@@ -367,6 +332,16 @@ static int assem_pass2(void)
 	}
 
 	return 0;
+}
+object_code* add_object_code_unit(int control_section_num, int type, int code, int length, int address) {
+	object_codes[object_code_num].control_section_num = control_section_num;
+	object_codes[object_code_num].type = type;
+	object_codes[object_code_num].code = code;
+	object_codes[object_code_num].length = length;
+	object_codes[object_code_num].address = address;
+	object_code_num++;
+
+	return &object_codes[object_code_num - 1];
 }
 /* -----------------------------------------------------------------------------------
  * 설명 : 머신을 위한 기계 코드목록 파일을 읽어 기계어 목록 테이블(inst_table)을 

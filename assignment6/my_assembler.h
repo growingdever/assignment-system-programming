@@ -159,3 +159,4 @@ int get_num_of_operand(const char* operand);
 int get_num_of_non_alphabet_and_number(const char* operand);
 int is_alphabet_and_number(char c);
 int is_expression(const char* operand);
+object_code* add_object_code_unit(int control_section_num, int type, int code, int length, int address);
