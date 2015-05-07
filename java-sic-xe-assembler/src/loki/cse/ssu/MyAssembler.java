@@ -148,9 +148,17 @@ public class MyAssembler {
 
         // operand tokenizing
         if( operandLine != null ) {
-            StringTokenizer operandTokenizer = new StringTokenizer(operandLine, ",");
+            StringTokenizer operandTokenizer = new StringTokenizer(operandLine, "[,\\+\\-]");
             while(operandTokenizer.hasMoreTokens()) {
-                token.AddOperand( operandTokenizer.nextToken() );
+                String str = operandTokenizer.nextToken();
+                int i = operandLine.indexOf(str);
+                if( i > 0 ) {
+                    char c = operandLine.charAt(i - 1);
+                    if( c == '-' ) {
+                        str = "-" + str;
+                    }
+                }
+                token.AddOperand( str );
             }
         }
 
@@ -206,7 +214,7 @@ public class MyAssembler {
 
         for( int i = 0; i < _symbols.size(); i ++ ) {
             Symbol symbol = _symbols.get(i);
-            if( symbol.IsSameSymbol(strSymbol) ) {
+            if( symbol.IsSameSymbol(strSymbol, csectNum) ) {
                 return;
             }
         }

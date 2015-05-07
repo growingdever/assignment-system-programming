@@ -18,8 +18,8 @@ public class Symbol {
         return _symbol;
     }
 
-    public boolean IsSameSymbol(String symbol) {
-        return _symbol.equals(symbol);
+    public boolean IsSameSymbol(String symbol, int csectNum) {
+        return _symbol.equals(symbol) && _csectNum == csectNum;
     }
 
     public int GetAddress() {
