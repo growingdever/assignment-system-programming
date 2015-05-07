@@ -1,6 +1,5 @@
 package loki.cse.ssu;
 
-import javax.jnlp.IntegrationService;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -18,6 +17,7 @@ public class MyAssembler {
     InstructionTable _instructionTable;
     ArrayList<String> _inputSourceLines;
     ArrayList<SourceToken> _tokens;
+    ArrayList<Symbol> _symbols;
 
 
 
@@ -28,6 +28,7 @@ public class MyAssembler {
         _instructionTable = new InstructionTable();
         _inputSourceLines = new ArrayList<>();
         _tokens = new ArrayList<>();
+        _symbols = new ArrayList<>();
     }
 
     public static void Start() {
@@ -84,15 +85,32 @@ public class MyAssembler {
     }
 
     private boolean Pass1() {
+        if( ! ParsingAllTokens() ) {
+            return false;
+        }
+
+        if( ! AddAllSymbols() ) {
+            return false;
+        }
+
+        for(SourceToken token : _tokens) {
+            System.out.println( token.GetOperator() );
+        }
+
+        System.out.println("Symbols:");
+        for(Symbol symbol : _symbols) {
+            System.out.println( symbol.GetSymbol() + " " + symbol.GetControlSectionNumber() );
+        }
+
+        return true;
+    }
+
+    private boolean ParsingAllTokens() {
         for( int i = 0; i < _inputSourceLines.size(); i ++ ) {
             String line = _inputSourceLines.get(i);
             if( ! ParsingToken(line) ) {
                 return false;
             }
-        }
-
-        for(SourceToken token : _tokens) {
-            System.out.println( token.GetOperator() );
         }
 
         return true;
@@ -140,6 +158,86 @@ public class MyAssembler {
 
         return true;
     }
+
+    private boolean AddAllSymbols() {
+        int csectNum = 0;
+
+        for( int i = 0; i < _tokens.size(); i ++ ) {
+            SourceToken token = _tokens.get(i);
+            String operator = token.GetOperator();
+
+            if( operator.equals("START") || operator.equals("CSECT") ) {
+                csectNum++;
+                continue;
+            }
+
+            if( token.GetLabel() != null ) {
+                AddSymbol(token.GetLabel(), csectNum);
+            }
+
+            if( operator.charAt(0) == '+' ) {
+                operator = operator.substring(1);
+            }
+
+            if( operator.equals("RESW")
+                    || operator.equals("RESB")
+                    || operator.equals("WORD")
+                    || operator.equals("BYTE") ) {
+                continue;
+            }
+
+            ArrayList<String> operands = token.GetOperands();
+            for(String operand : operands) {
+                AddSymbol(operand, csectNum);
+            }
+        }
+
+        return true;
+    }
+
+    private void AddSymbol(String strSymbol, int csectNum) {
+        if( GetAddressOfRegister(strSymbol) != -1 ) {
+            return;
+        }
+
+        if( strSymbol.charAt(0) == '#' || strSymbol.charAt(0) == '*' ) {
+            return;
+        }
+
+        for( int i = 0; i < _symbols.size(); i ++ ) {
+            Symbol symbol = _symbols.get(i);
+            if( symbol.IsSameSymbol(strSymbol) ) {
+                return;
+            }
+        }
+
+        _symbols.add( new Symbol(strSymbol, 0, csectNum) );
+    }
+
+    int GetAddressOfRegister(String str) {
+        if( str.equals("A") ) {
+            return 0;
+        } else if( str.equals("X") ) {
+            return 1;
+        } else if( str.equals("L") ) {
+            return 2;
+        } else if( str.equals("PC") ) {
+            return 8;
+        } else if( str.equals("SW") ) {
+            return 9;
+        } else if( str.equals("B") ) {
+            return 3;
+        } else if( str.equals("S") ) {
+            return 4;
+        } else if( str.equals("T") ) {
+            return 5;
+        } else if( str.equals("F") ) {
+            return 6;
+        }
+
+        return -1;
+    }
+
 
     private boolean Pass2() {
         return true;
