@@ -34,7 +34,7 @@ public class InstructionData {
     }
 
     public int GetOpCode() {
-        return Integer.parseInt( _opcode.substring(2) );
+        return Integer.parseInt( _opcode.substring(2), 16 );
     }
 
     public int GetNumOfOperand() {
