@@ -278,7 +278,7 @@ public class MyAssembler {
             if( operator.equals("EXTREF") ) {
                 ArrayList<String> operands = token.GetOperands();
                 for(String operand : operands) {
-                    AddSymbol(operand, csectNum, locationCounter);
+                    AddSymbol(operand, csectNum, Constants.ADDRESS_EXTREF);
                 }
                 continue;
             }
@@ -377,7 +377,7 @@ public class MyAssembler {
             }
         }
 
-        return 0;
+        return -1;
     }
 
 
@@ -399,6 +399,14 @@ public class MyAssembler {
                 continue;
             }
 
+            if( token.GetOperator().equals("EXTREF") ) {
+                continue;
+            }
+
+            if( token.GetOperator().equals("END") ) {
+                continue;
+            }
+
             int objectCode = 0;
             objectCode = CalculateObjectCode(token, locationCounter, csectNum);
 
@@ -408,6 +416,31 @@ public class MyAssembler {
             } else {
                 String formatted = String.format("%8s %8s %08X", token.GetLabel(), token.GetOperator(), objectCode);
                 System.out.println(formatted);
+            }
+
+            if( token.GetOperator().equals("BYTE") || token.GetOperator().equals("WORD") ) {
+                continue;
+            }
+
+            if( token.GetOperands().size() > 0 && token.GetOperands().get(0).equals("*") ) {
+                continue;
+            }
+
+            for(String operand : token.GetOperands()) {
+                if( operand.charAt(0) == '@'
+                        || operand.charAt(0) == '#'
+                        || operand.charAt(0) == '+'
+                        || operand.charAt(0) == '-' ) {
+                    operand = operand.substring(1);
+                }
+
+                if( TransformableToInteger(operand) ) {
+                    continue;
+                }
+
+                if( GetAddressOfRegister(operand) == -1 && GetAddressOfSymbol(operand, csectNum) == Constants.ADDRESS_EXTREF ) {
+                    System.out.println("M : " + operand);
+                }
             }
 
             locationCounter += IncreaseLocationCounterByToken(token);
@@ -538,6 +571,16 @@ public class MyAssembler {
         }
 
         return 0;
+    }
+
+    private boolean TransformableToInteger(String str) {
+        try {
+            Integer.parseInt(str);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+
+        return true;
     }
 
 }
