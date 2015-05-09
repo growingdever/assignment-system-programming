@@ -242,6 +242,7 @@ public class MyAssembler {
                         newToken = new SourceToken("WORD");
                     }
 
+                    newToken.SetLabel(literal);
                     newToken.AddOperand(literal.substring(1));
                     newTokens.add(newToken);
 
