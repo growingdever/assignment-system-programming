@@ -101,7 +101,7 @@ public class MyAssembler {
         }
 
         for(SourceToken token : _tokens) {
-            if( token.GetOperator().equals("CSECT") ) {
+            if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_CSECT_STRING) ) {
                 System.out.println();
             }
 
@@ -116,7 +116,10 @@ public class MyAssembler {
 
         System.out.println("Symbols:");
         for(Symbol symbol : _symbols) {
-            String formatted = String.format("%8s %2d %08X", symbol.GetSymbol(), symbol.GetControlSectionNumber(), symbol.GetAddress());
+            String formatted = String.format("%8s %2d %08X",
+                    symbol.GetSymbol(),
+                    symbol.GetControlSectionNumber(),
+                    symbol.GetAddress());
             System.out.println(formatted);
         }
 
@@ -193,13 +196,14 @@ public class MyAssembler {
         for( int i = 0; i < _tokens.size(); i ++ ) {
             SourceToken token = _tokens.get(i);
 
-            if( token.GetOperator().equals("START") || token.GetOperator().equals("CSECT") ) {
+            if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_START_STRING)
+                    || token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_CSECT_STRING) ) {
                 csectNum++;
                 generateTargetPosition.add(i);
                 continue;
             }
 
-            if( token.GetOperator().equals("LTORG") ) {
+            if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_LTORG_STRING) ) {
                 generateTargetPosition.add(i);
                 _tokens.remove(i);
                 continue;
@@ -238,9 +242,9 @@ public class MyAssembler {
                     String literal = pair.getKey();
                     SourceToken newToken;
                     if( literal.charAt(1) == 'X' || literal.charAt(1) == 'C' ) {
-                        newToken = new SourceToken("BYTE");
+                        newToken = new SourceToken(Constants.ASSEMBLY_DIRECTIVE_BYTE_STRING);
                     } else {
-                        newToken = new SourceToken("WORD");
+                        newToken = new SourceToken(Constants.ASSEMBLY_DIRECTIVE_WORD_STRING);
                     }
 
                     newToken.SetLabel(literal);
@@ -266,7 +270,8 @@ public class MyAssembler {
             SourceToken token = _tokens.get(i);
             String operator = token.GetOperator();
 
-            if( operator.equals("START") || operator.equals("CSECT") ) {
+            if( operator.equals(Constants.ASSEMBLY_DIRECTIVE_START_STRING)
+                    || operator.equals(Constants.ASSEMBLY_DIRECTIVE_CSECT_STRING) ) {
                 csectNum++;
                 if( token.GetOperands().size() > 0 ) {
                     locationCounter = Integer.parseInt( token.GetOperands().get(0) );
@@ -275,7 +280,7 @@ public class MyAssembler {
                 }
             }
 
-            if( operator.equals("EXTREF") ) {
+            if( operator.equals(Constants.ASSEMBLY_DIRECTIVE_EXTREF_STRING) ) {
                 ArrayList<String> operands = token.GetOperands();
                 for(String operand : operands) {
                     AddSymbol(operand, csectNum, Constants.ADDRESS_EXTREF);
@@ -294,18 +299,18 @@ public class MyAssembler {
     }
 
     private int IncreaseLocationCounterByToken(SourceToken token) {
-        if( token.GetOperator().equals("RESB") ) {
+        if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_RESB_STRING) ) {
             return Integer.parseInt( token.GetOperands().get(0) );
-        } else if( token.GetOperator().equals("RESW") ) {
+        } else if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_RESW_STRING) ) {
             return Integer.parseInt( token.GetOperands().get(0) ) * Constants.SIZE_OF_WORD;
-        } else if( token.GetOperator().equals("BYTE") ) {
+        } else if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_BYTE_STRING) ) {
             String operand = token.GetOperands().get(0);
             if( operand.charAt(0) == 'C' ) {
                 return operand.length() - 3;
             } else {
                 return (operand.length() - 3) / 2;
             }
-        } else if( token.GetOperator().equals("WORD") ) {
+        } else if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_WORD_STRING) ) {
             return 3;
         }
 
@@ -389,7 +394,8 @@ public class MyAssembler {
         System.out.println();
 
         for(SourceToken token : _tokens) {
-            if( token.GetOperator().equals("START") || token.GetOperator().equals("CSECT") ) {
+            if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_START_STRING)
+                    || token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_CSECT_STRING) ) {
                 csectNum++;
                 if( token.GetOperands().size() > 0 ) {
                     locationCounter = Integer.parseInt( token.GetOperands().get(0) );
@@ -399,11 +405,11 @@ public class MyAssembler {
                 continue;
             }
 
-            if( token.GetOperator().equals("EXTREF") ) {
+            if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_EXTREF_STRING) ) {
                 continue;
             }
 
-            if( token.GetOperator().equals("END") ) {
+            if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_END_STRING) ) {
                 continue;
             }
 
@@ -418,7 +424,8 @@ public class MyAssembler {
                 System.out.println(formatted);
             }
 
-            if( token.GetOperator().equals("BYTE") || token.GetOperator().equals("WORD") ) {
+            if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_BYTE_STRING)
+                    || token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_WORD_STRING) ) {
                 continue;
             }
 
@@ -438,7 +445,8 @@ public class MyAssembler {
                     continue;
                 }
 
-                if( GetAddressOfRegister(operand) == -1 && GetAddressOfSymbol(operand, csectNum) == Constants.ADDRESS_EXTREF ) {
+                if( GetAddressOfRegister(operand) == -1
+                        && GetAddressOfSymbol(operand, csectNum) == Constants.ADDRESS_EXTREF ) {
                     System.out.println("M : " + operand);
                 }
             }
@@ -450,9 +458,9 @@ public class MyAssembler {
     }
 
     private int CalculateObjectCode(SourceToken token, int locationCounter, int controlSectionNumber) {
-        if( token.GetOperator().equals("BYTE") ) {
+        if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_BYTE_STRING) ) {
             return CalculateObjectCodeBYTE(token);
-        } else if( token.GetOperator().equals("WORD") ) {
+        } else if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_WORD_STRING) ) {
             return CalculateObjectCodeWORD(token, controlSectionNumber);
         }
 
