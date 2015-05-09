@@ -1,5 +1,8 @@
 package loki.cse.ssu;
 
+import javafx.util.Pair;
+
+import javax.xml.transform.Source;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -89,13 +92,27 @@ public class MyAssembler {
             return false;
         }
 
+        if( ! GenerateLiterals() ) {
+            return false;
+        }
+
         if( ! AddAllSymbols() ) {
             return false;
         }
 
         for(SourceToken token : _tokens) {
-            System.out.println( token.GetOperator() );
+            if( token.GetOperator().equals("CSECT") ) {
+                System.out.println();
+            }
+
+            if( token.GetOperands().size() == 0 ) {
+                System.out.println( token.GetOperator() );
+            } else {
+                System.out.println( token.GetOperator() + " " + token.GetOperands().get(0) );
+            }
         }
+
+        System.out.println();
 
         System.out.println("Symbols:");
         for(Symbol symbol : _symbols) {
@@ -163,6 +180,78 @@ public class MyAssembler {
         }
 
         _tokens.add(token);
+
+        return true;
+    }
+
+    private boolean GenerateLiterals() {
+        ArrayList<Pair<String, Integer>> literals = new ArrayList<>();
+        ArrayList<Integer> generateTargetPosition = new ArrayList<>(); // start from 1 because START operator
+
+        int csectNum = 0;
+        for( int i = 0; i < _tokens.size(); i ++ ) {
+            SourceToken token = _tokens.get(i);
+
+            if( token.GetOperator().equals("START") || token.GetOperator().equals("CSECT") ) {
+                csectNum++;
+                generateTargetPosition.add(i);
+                continue;
+            }
+
+            if( token.GetOperator().equals("LTORG") ) {
+                generateTargetPosition.add(i);
+                _tokens.remove(i);
+                continue;
+            }
+
+            ArrayList<String> operands = token.GetOperands();
+            if( operands.size() == 0 ) {
+                continue;
+            }
+
+            String operand1 = operands.get(0);
+            if( operand1.charAt(0) == '=' ) {
+                boolean isExist = false;
+                for( int j = 0; j < literals.size(); j ++ ) {
+                    if( literals.get(j).getKey().equals(operand1) ) {
+                        isExist = true;
+                        break;
+                    }
+                }
+
+                if( ! isExist ) {
+                    literals.add(new Pair<>(operand1, i) );
+                }
+            }
+        }
+
+        generateTargetPosition.add(_tokens.size());
+
+        int generated = 0;
+        int last = 0;
+        for(Integer targetIndex : generateTargetPosition) {
+            ArrayList<SourceToken> newTokens = new ArrayList<>();
+            for( int i = last; i < literals.size(); i ++ ) {
+                Pair<String, Integer> pair = literals.get(i);
+                if( pair.getValue() < targetIndex ) {
+                    String literal = pair.getKey();
+                    SourceToken newToken;
+                    if( literal.charAt(1) == 'X' || literal.charAt(1) == 'C' ) {
+                        newToken = new SourceToken("BYTE");
+                    } else {
+                        newToken = new SourceToken("WORD");
+                    }
+
+                    newToken.AddOperand(literal.substring(1));
+                    newTokens.add(newToken);
+
+                    last = i + 1;
+                    generated++;
+                }
+            }
+
+            _tokens.addAll(targetIndex + generated - newTokens.size(), newTokens);
+        }
 
         return true;
     }
