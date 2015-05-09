@@ -372,7 +372,56 @@ public class MyAssembler {
 
 
     private boolean Pass2() {
+        int csectNum = 0;
+
+        for(SourceToken token : _tokens) {
+            if( token.GetOperator().equals("START") || token.GetOperator().equals("CSECT") ) {
+                csectNum++;
+                continue;
+            }
+
+            int objectCode = 0;
+            objectCode = CalculateObjectCode(token);
+
+            String formatted = String.format("%8s %8s %08X", token.GetLabel(), token.GetOperator(), objectCode);
+            System.out.println(formatted);
+        }
+
         return true;
+    }
+
+    private int CalculateObjectCode(SourceToken token) {
+        int n = 1, i = 1, x = 0, b = 0, p = 0, e = 0, disp = 0;
+        int code = 0;
+
+        String operator = token.GetOperator();
+
+        InstructionData instructionData = _instructionTable.GetInstructionData(token.GetOperator());
+        if( instructionData == null ) {
+            return -1;
+        }
+
+        if( operator.charAt(0) == '+' ) {
+            // format 4
+        } else {
+            if( instructionData.IsValidFormat(2) ) {
+                // format 2
+                code += instructionData.GetOpCode() << 8;
+
+                code += GetAddressOfRegister( token.GetOperands().get(0) ) << 4;
+                if( token.GetOperands().size() > 1 ) {
+                    code += GetAddressOfRegister( token.GetOperands().get(1) );
+                }
+
+                return code;
+            } else {
+                // format 3
+
+                return code;
+            }
+        }
+
+        return 0;
     }
 
 }
