@@ -106,9 +106,9 @@ public class MyAssembler {
             }
 
             if( token.GetOperands().size() == 0 ) {
-                System.out.println( token.GetOperator() );
+                System.out.println( token.GetLabel() + " " + token.GetOperator() );
             } else {
-                System.out.println( token.GetOperator() + " " + token.GetOperands().get(0) );
+                System.out.println( token.GetLabel() + " " + token.GetOperator() + " " + token.GetOperands().get(0) );
             }
         }
 
@@ -116,7 +116,8 @@ public class MyAssembler {
 
         System.out.println("Symbols:");
         for(Symbol symbol : _symbols) {
-            System.out.println( symbol.GetSymbol() + " " + symbol.GetControlSectionNumber() );
+            String formatted = String.format("%8s %2d %08X", symbol.GetSymbol(), symbol.GetControlSectionNumber(), symbol.GetAddress());
+            System.out.println(formatted);
         }
 
         return true;
@@ -259,6 +260,7 @@ public class MyAssembler {
 
     private boolean AddAllSymbols() {
         int csectNum = 0;
+        int locationCounter = 0;
 
         for( int i = 0; i < _tokens.size(); i ++ ) {
             SourceToken token = _tokens.get(i);
@@ -266,34 +268,66 @@ public class MyAssembler {
 
             if( operator.equals("START") || operator.equals("CSECT") ) {
                 csectNum++;
+                if( token.GetOperands().size() > 0 ) {
+                    locationCounter = Integer.parseInt( token.GetOperands().get(0) );
+                } else {
+                    locationCounter = 0;
+                }
+            }
+
+            if( operator.equals("EXTREF") ) {
+                ArrayList<String> operands = token.GetOperands();
+                for(String operand : operands) {
+                    AddSymbol(operand, csectNum, locationCounter);
+                }
                 continue;
             }
 
             if( token.GetLabel() != null ) {
-                AddSymbol(token.GetLabel(), csectNum);
+                AddSymbol(token.GetLabel(), csectNum, locationCounter);
             }
 
-            if( operator.charAt(0) == '+' ) {
-                operator = operator.substring(1);
-            }
-
-            if( operator.equals("RESW")
-                    || operator.equals("RESB")
-                    || operator.equals("WORD")
-                    || operator.equals("BYTE") ) {
-                continue;
-            }
-
-            ArrayList<String> operands = token.GetOperands();
-            for(String operand : operands) {
-                AddSymbol(operand, csectNum);
-            }
+            locationCounter += IncreaseLocationCounterByToken(token);
         }
 
         return true;
     }
 
-    private void AddSymbol(String strSymbol, int csectNum) {
+    private int IncreaseLocationCounterByToken(SourceToken token) {
+        if( token.GetOperator().equals("RESB") ) {
+            return Integer.parseInt( token.GetOperands().get(0) );
+        } else if( token.GetOperator().equals("RESW") ) {
+            return Integer.parseInt( token.GetOperands().get(0) ) * 3;
+        } else if( token.GetOperator().equals("BYTE") ) {
+            String operand = token.GetOperands().get(0);
+            if( operand.charAt(0) == 'C' ) {
+                return operand.length() - 3;
+            } else {
+                return (operand.length() - 3) / 2;
+            }
+        } else if( token.GetOperator().equals("WORD") ) {
+            return 3;
+        }
+
+        if( token.GetOperator().charAt(0) == '+' ) {
+            return 4;
+        }
+
+        InstructionData data = _instructionTable.GetInstructionData(token.GetOperator());
+        if( data == null ) {
+            return 0;
+        }
+
+        for( int i = 1; i <= 3; i ++ ) {
+            if( data.IsValidFormat(i) ) {
+                return i;
+            }
+        }
+
+        return 0;
+    }
+
+    private void AddSymbol(String strSymbol, int csectNum, int address) {
         if( GetAddressOfRegister(strSymbol) != -1 ) {
             return;
         }
@@ -309,7 +343,7 @@ public class MyAssembler {
             }
         }
 
-        _symbols.add( new Symbol(strSymbol, 0, csectNum) );
+        _symbols.add( new Symbol(strSymbol, address, csectNum) );
     }
 
     int GetAddressOfRegister(String str) {
