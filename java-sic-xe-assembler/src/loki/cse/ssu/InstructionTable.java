@@ -48,6 +48,10 @@ public class InstructionTable {
     }
 
     public InstructionData GetInstructionData(String mnemonic) {
+        if( mnemonic.charAt(0) == '+' ) {
+            mnemonic = mnemonic.substring(1);
+        }
+
         for( int i = 0; i < _instructions.size(); i ++ ) {
             if( _instructions.get(i).IsSameMnemonic(mnemonic) ) {
                 return _instructions.get(i);

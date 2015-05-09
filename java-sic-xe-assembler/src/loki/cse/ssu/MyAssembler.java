@@ -370,9 +370,23 @@ public class MyAssembler {
         return -1;
     }
 
+    int GetAddressOfSymbol(String strSymbol, int controlSectionNumber) {
+        for(Symbol symbol : _symbols) {
+            if( symbol.IsSameSymbol(strSymbol, controlSectionNumber) ) {
+                return symbol.GetAddress();
+            }
+        }
+
+        return 0;
+    }
+
 
     private boolean Pass2() {
         int csectNum = 0;
+        int locationCounter = 0;
+
+        System.out.println();
+        System.out.println();
 
         for(SourceToken token : _tokens) {
             if( token.GetOperator().equals("START") || token.GetOperator().equals("CSECT") ) {
@@ -381,16 +395,18 @@ public class MyAssembler {
             }
 
             int objectCode = 0;
-            objectCode = CalculateObjectCode(token);
+            objectCode = CalculateObjectCode(token, locationCounter, csectNum);
 
             String formatted = String.format("%8s %8s %08X", token.GetLabel(), token.GetOperator(), objectCode);
             System.out.println(formatted);
+
+            locationCounter += IncreaseLocationCounterByToken(token);
         }
 
         return true;
     }
 
-    private int CalculateObjectCode(SourceToken token) {
+    private int CalculateObjectCode(SourceToken token, int locationCounter, int controlSectionNumber) {
         int n = 1, i = 1, x = 0, b = 0, p = 0, e = 0, disp = 0;
         int code = 0;
 
@@ -403,6 +419,20 @@ public class MyAssembler {
 
         if( operator.charAt(0) == '+' ) {
             // format 4
+            locationCounter += 4;
+
+            if( token.GetOperands().size() >= 2 && token.GetOperands().get(1).charAt(0) == 'X' ) {
+                x = 1;
+            }
+
+            n = 1;
+            i = 1;
+            e = 1;
+
+            code += (instructionData.GetOpCode() + n * 2 + i) << 24;
+            code += x << 23;
+            code += e << 20;
+            return code;
         } else {
             if( instructionData.IsValidFormat(2) ) {
                 // format 2
@@ -416,12 +446,47 @@ public class MyAssembler {
                 return code;
             } else {
                 // format 3
+                locationCounter += 3;
+
+                p = 1;
+
+                if( token.GetOperands().size() == 0 ) {
+                    n = 1;
+                    i = 1;
+                    x = b = p = e = 0;
+                } else {
+                    String operand = token.GetOperands().get(0);
+                    if( operand.charAt(0) == '#' ) {
+                        n = 0;
+                        i = 1;
+                        p = 0;
+                        disp = Integer.parseInt( operand.substring(1) );
+                    } else if( operand.charAt(0) == '@' ) {
+                        n = 1;
+                        i = 0;
+                        disp = GetAddressOfSymbol(operand.substring(1), controlSectionNumber) - locationCounter;
+
+                    } else {
+                        n = 1;
+                        i = 1;
+                        disp = GetAddressOfSymbol(operand, controlSectionNumber) - locationCounter;
+                    }
+                }
+
+                if( token.GetOperands().size() >= 2 && token.GetOperands().get(1).charAt(0) == 'X' ) {
+                    x = 1;
+                }
+
+                code += (instructionData.GetOpCode() + n * 2 + i) << 16;
+                code += x << 15;
+                code += b << 14;
+                code += p << 13;
+                code += e << 12;
+                code += (0x00000FFF & disp);
 
                 return code;
             }
         }
-
-        return 0;
     }
 
 }
