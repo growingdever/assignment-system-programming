@@ -402,8 +402,13 @@ public class MyAssembler {
             int objectCode = 0;
             objectCode = CalculateObjectCode(token, locationCounter, csectNum);
 
-            String formatted = String.format("%8s %8s %08X", token.GetLabel(), token.GetOperator(), objectCode);
-            System.out.println(formatted);
+            if( objectCode == -1 ) {
+                String formatted = String.format("%8s %8s", token.GetLabel(), token.GetOperator());
+                System.out.println(formatted);
+            } else {
+                String formatted = String.format("%8s %8s %08X", token.GetLabel(), token.GetOperator(), objectCode);
+                System.out.println(formatted);
+            }
 
             locationCounter += IncreaseLocationCounterByToken(token);
         }
@@ -412,6 +417,12 @@ public class MyAssembler {
     }
 
     private int CalculateObjectCode(SourceToken token, int locationCounter, int controlSectionNumber) {
+        if( token.GetOperator().equals("BYTE") ) {
+            return CalculateObjectCodeBYTE(token);
+        } else if( token.GetOperator().equals("WORD") ) {
+            return CalculateObjectCodeWORD(token, controlSectionNumber);
+        }
+
         int n = 1, i = 1, x = 0, b = 0, p = 0, e = 0, disp = 0;
         int code = 0;
 
@@ -492,6 +503,42 @@ public class MyAssembler {
                 return code;
             }
         }
+    }
+
+    private int CalculateObjectCodeBYTE(SourceToken token) {
+        String operand = token.GetOperands().get(0);
+        int code = 0;
+
+        if( operand.charAt(0) == 'C' ) {
+            int left = 2;
+            int right = operand.length() - 2;
+            for( int i = left; i <= right; i ++ ) {
+                char c = operand.charAt(i);
+                code += c << (8 * Math.abs(i - right));
+            }
+        } else if( operand.charAt(0) == 'X' ) {
+            int left = 2;
+            int right = 3;
+            for( int i = left; i <= right; i ++ ) {
+                char c = operand.charAt(i);
+                int tmp = c > '9' ? c - 'A' + 10 : c - '0';
+                code += tmp << (4 * Math.abs(i - right));
+            }
+        }
+
+        return code;
+    }
+
+    private int CalculateObjectCodeWORD(SourceToken token, int controlSectionNumber) {
+        if( token.GetOperands().size() == 1 ) {
+            String operand = token.GetOperands().get(0);
+            int address = GetAddressOfSymbol(operand, controlSectionNumber);
+            if( address != 0 ) {
+                return Integer.parseInt( token.GetOperands().get(0) );
+            }
+        }
+
+        return 0;
     }
 
 }
