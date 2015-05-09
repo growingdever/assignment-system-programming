@@ -297,7 +297,7 @@ public class MyAssembler {
         if( token.GetOperator().equals("RESB") ) {
             return Integer.parseInt( token.GetOperands().get(0) );
         } else if( token.GetOperator().equals("RESW") ) {
-            return Integer.parseInt( token.GetOperands().get(0) ) * 3;
+            return Integer.parseInt( token.GetOperands().get(0) ) * Constants.SIZE_OF_WORD;
         } else if( token.GetOperator().equals("BYTE") ) {
             String operand = token.GetOperands().get(0);
             if( operand.charAt(0) == 'C' ) {
@@ -435,7 +435,6 @@ public class MyAssembler {
 
         if( operator.charAt(0) == '+' ) {
             // format 4
-            locationCounter += 4;
 
             if( token.GetOperands().size() >= 2 && token.GetOperands().get(1).charAt(0) == 'X' ) {
                 x = 1;
@@ -462,7 +461,7 @@ public class MyAssembler {
                 return code;
             } else {
                 // format 3
-                locationCounter += 3;
+                locationCounter += Constants.SIZE_OF_FORMAT3;
 
                 p = 1;
 
