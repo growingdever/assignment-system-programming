@@ -391,6 +391,11 @@ public class MyAssembler {
         for(SourceToken token : _tokens) {
             if( token.GetOperator().equals("START") || token.GetOperator().equals("CSECT") ) {
                 csectNum++;
+                if( token.GetOperands().size() > 0 ) {
+                    locationCounter = Integer.parseInt( token.GetOperands().get(0) );
+                } else {
+                    locationCounter = 0;
+                }
                 continue;
             }
 
