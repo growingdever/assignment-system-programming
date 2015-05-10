@@ -10,11 +10,13 @@ public class SourceToken {
     String _operator;
     ArrayList<String> _operands;
     String _comment;
+    boolean _generatedByLTORG;
 
     public SourceToken(String operator) {
         _operator = operator;
 
         _operands = new ArrayList<>();
+        _generatedByLTORG = false;
     }
 
     public String GetLabel() {
@@ -40,5 +42,12 @@ public class SourceToken {
     }
     public void SetComment(String comment) {
         _comment = comment;
+    }
+
+    public void SetGeneratedByLTORG(boolean b) {
+        _generatedByLTORG = b;
+    }
+    public boolean IsGeneratedByLTORG() {
+        return _generatedByLTORG;
     }
 }

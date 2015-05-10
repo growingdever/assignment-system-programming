@@ -200,7 +200,7 @@ public class MyAssembler {
 
     private boolean GenerateLiterals() {
         ArrayList<Pair<String, Integer>> literals = new ArrayList<>();
-        ArrayList<Integer> generateTargetPosition = new ArrayList<>(); // start from 1 because START operator
+        ArrayList<Pair<Integer, Boolean>> generateTargetPosition = new ArrayList<>(); // start from 1 because START operator
 
         int csectNum = 0;
         for( int i = 0; i < _tokens.size(); i ++ ) {
@@ -209,12 +209,12 @@ public class MyAssembler {
             if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_START_STRING)
                     || token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_CSECT_STRING) ) {
                 csectNum++;
-                generateTargetPosition.add(i);
+                generateTargetPosition.add(new Pair<>(i, false));
                 continue;
             }
 
             if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_LTORG_STRING) ) {
-                generateTargetPosition.add(i);
+                generateTargetPosition.add(new Pair<>(i, true));
                 _tokens.remove(i);
                 continue;
             }
@@ -240,15 +240,15 @@ public class MyAssembler {
             }
         }
 
-        generateTargetPosition.add(_tokens.size() - 1);
+        generateTargetPosition.add(new Pair<>(_tokens.size() - 1, false));
 
         int generated = 0;
         int last = 0;
-        for(Integer targetIndex : generateTargetPosition) {
+        for(Pair<Integer, Boolean> targetIndex : generateTargetPosition) {
             ArrayList<SourceToken> newTokens = new ArrayList<>();
             for( int i = last; i < literals.size(); i ++ ) {
                 Pair<String, Integer> pair = literals.get(i);
-                if( pair.getValue() < targetIndex ) {
+                if( pair.getValue() < targetIndex.getKey() ) {
                     String literal = pair.getKey();
                     SourceToken newToken;
                     if( literal.charAt(1) == 'X' || literal.charAt(1) == 'C' ) {
@@ -258,6 +258,7 @@ public class MyAssembler {
                     }
 
                     newToken.SetLabel(literal);
+                    newToken.SetGeneratedByLTORG(targetIndex.getValue());
                     newToken.AddOperand(literal.substring(1));
                     newTokens.add(newToken);
 
@@ -266,7 +267,7 @@ public class MyAssembler {
                 }
             }
 
-            _tokens.addAll(targetIndex + generated - newTokens.size(), newTokens);
+            _tokens.addAll(targetIndex.getKey() + generated - newTokens.size(), newTokens);
         }
 
         return true;
@@ -459,7 +460,7 @@ public class MyAssembler {
                 System.out.println(formatted);
 
                 char type = Constants.RECORD_PREFIX_TEXT;
-                if( token.GetLabel() != null && token.GetLabel().charAt(0) == '=' ) {
+                if( token.IsGeneratedByLTORG() && token.GetLabel() != null && token.GetLabel().charAt(0) == '=' ) {
                     type = Constants.RECORD_PREFIX_LITERAL;
                 }
 
@@ -644,7 +645,23 @@ public class MyAssembler {
             }
         }
 
-        return new Pair<>(0, 0);
+        int value = 0;
+        for(String operand : token.GetOperands()) {
+            String onlyOperand = operand;
+            if( operand.charAt(0) == '+' || operand.charAt(0) == '-' ) {
+                onlyOperand = operand.substring(1);
+            }
+
+            if( TransformableToInteger(operand) ) {
+                if( operand.charAt(0) == '+' ) {
+                    value += Integer.parseInt(onlyOperand);
+                } else {
+                    value -= Integer.parseInt(onlyOperand);
+                }
+            }
+        }
+
+        return new Pair<>(Constants.SIZE_OF_WORD, value);
     }
 
     private boolean TransformableToInteger(String str) {
