@@ -427,7 +427,7 @@ public class MyAssembler {
 
             if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_EXTDEF_STRING) ) {
                 for(String symbol : token.GetOperands()) {
-                    ObjectCode objectCode = new ObjectCode('D', 0, 0);
+                    ObjectCode objectCode = new ObjectCode('D', 0, GetAddressOfSymbol(symbol, csectNum));
                     objectCode.SetSymbol(symbol);
                     _objectCodes.get(csectNum).add( objectCode );
                 }
