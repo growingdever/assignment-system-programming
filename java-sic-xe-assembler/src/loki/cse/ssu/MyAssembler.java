@@ -5,10 +5,7 @@ import com.sun.tools.javac.code.Attribute;
 import javafx.util.Pair;
 
 import javax.xml.transform.Source;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -117,11 +114,17 @@ public class MyAssembler {
                 System.out.println();
             }
 
-            if( token.GetOperands().size() == 0 ) {
-                System.out.println( token.GetLabel() + " " + token.GetOperator() );
-            } else {
-                System.out.println( token.GetLabel() + " " + token.GetOperator() + " " + token.GetOperands().get(0) );
+            String line = String.format("%7s %7s", token.GetLabel(), token.GetOperator());
+            if( token.GetOperands().size() > 0 ) {
+                line += "  ";
+                for(String operand : token.GetOperands()) {
+                    line += operand + ", ";
+                }
+
+                line = line.substring(0, line.length() - 2);
             }
+
+            System.out.println(line);
         }
 
         System.out.println();
@@ -500,8 +503,6 @@ public class MyAssembler {
 
                 if( GetAddressOfRegister(onlySymbol) == -1
                         && GetAddressOfSymbol(onlySymbol, csectNum) == Constants.ADDRESS_EXTREF ) {
-                    System.out.println("M : " + operand);
-
                     int offset = locationCounterIncrease;
                     if( token.GetOperator().charAt(0) == '+' ) {
                         offset -= 1;
@@ -684,6 +685,7 @@ public class MyAssembler {
             System.setOut(outPrintStream);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out)));
             return false;
         }
 
@@ -844,6 +846,8 @@ public class MyAssembler {
                 System.out.println( String.format( Constants.RECORD_PREFIX_END + "\n") );
             }
         }
+
+        System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out)));
 
         return true;
     }
