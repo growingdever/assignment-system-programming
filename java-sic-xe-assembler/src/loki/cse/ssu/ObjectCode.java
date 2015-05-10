@@ -8,11 +8,13 @@ public class ObjectCode {
     int _code;
     int _address;
     String _symbol;
+    int _format;
 
     public ObjectCode(char type, int code, int address) {
         _type = type;
         _code = code;
         _address = address;
+        _format = 0;
     }
 
     public char GetType() {
@@ -33,5 +35,12 @@ public class ObjectCode {
 
     public void SetSymbol(String symbol) {
         _symbol = symbol;
+    }
+
+    public void SetFormat(int format) {
+        _format = format;
+    }
+    public int GetFormat() {
+        return _format;
     }
 }

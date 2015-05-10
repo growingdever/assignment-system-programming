@@ -1,5 +1,7 @@
 package loki.cse.ssu;
 
+import com.sun.tools.internal.jxc.ap.Const;
+import com.sun.tools.javac.code.Attribute;
 import javafx.util.Pair;
 
 import javax.xml.transform.Source;
@@ -68,6 +70,10 @@ public class MyAssembler {
         if( ! Pass2() ) {
             System.err.println("error! - Pass2");
             return false;
+        }
+
+        if( ! PrintObjectCodes() ) {
+            System.err.println("error! - PrintObjectCoeds");
         }
 
         return true;
@@ -234,7 +240,7 @@ public class MyAssembler {
             }
         }
 
-        generateTargetPosition.add(_tokens.size());
+        generateTargetPosition.add(_tokens.size() - 1);
 
         int generated = 0;
         int last = 0;
@@ -400,6 +406,10 @@ public class MyAssembler {
         for(SourceToken token : _tokens) {
             if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_START_STRING)
                     || token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_CSECT_STRING) ) {
+                if( csectNum >= 1 ) {
+                    _objectCodes.get(csectNum).add(new ObjectCode(Constants.RECORD_PREFIX_END, 0, locationCounter));
+                }
+
                 csectNum++;
 
                 if( token.GetOperands().size() > 0 ) {
@@ -421,6 +431,8 @@ public class MyAssembler {
                     objectCode.SetSymbol(symbol);
                     _objectCodes.get(csectNum).add( objectCode );
                 }
+
+                continue;
             }
 
             if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_EXTREF_STRING) ) {
@@ -434,30 +446,39 @@ public class MyAssembler {
             }
 
             if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_END_STRING) ) {
-                _objectCodes.get(csectNum).add(new ObjectCode('E', 0, locationCounter));
+                _objectCodes.get(csectNum).add(new ObjectCode(Constants.RECORD_PREFIX_END, 0, locationCounter));
                 continue;
             }
 
-            int objectCode = CalculateObjectCode(token, locationCounter, csectNum);
-            if( objectCode == -1 ) {
+            Pair<Integer, Integer> objectCode = CalculateObjectCode(token, locationCounter, csectNum);
+            if( objectCode.getValue() == -1 ) {
                 String formatted = String.format("%8s %8s", token.GetLabel(), token.GetOperator());
                 System.out.println(formatted);
             } else {
-                String formatted = String.format("%8s %8s %08X", token.GetLabel(), token.GetOperator(), objectCode);
+                String formatted = String.format("%8s %8s %08X", token.GetLabel(), token.GetOperator(), objectCode.getValue());
                 System.out.println(formatted);
 
-                _objectCodes.get(csectNum).add(new ObjectCode('T', objectCode, locationCounter));
+                char type = Constants.RECORD_PREFIX_TEXT;
+                if( token.GetLabel() != null && token.GetLabel().charAt(0) == '=' ) {
+                    type = Constants.RECORD_PREFIX_LITERAL;
+                }
+
+                ObjectCode unit = new ObjectCode(type, objectCode.getValue(), locationCounter);
+                unit.SetFormat( objectCode.getKey() );
+                _objectCodes.get(csectNum).add(unit);
             }
+
+            int locationCounterIncrease = IncreaseLocationCounterByToken(token);
+            locationCounter += locationCounterIncrease;
 
             //
             // generate modification row
             //
-            if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_BYTE_STRING)
-                    || token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_WORD_STRING) ) {
+            if( token.GetOperands().size() > 0 && token.GetOperands().get(0).equals("*") ) {
                 continue;
             }
 
-            if( token.GetOperands().size() > 0 && token.GetOperands().get(0).equals("*") ) {
+            if( token.GetOperator().equals("BYTE") ) {
                 continue;
             }
 
@@ -477,29 +498,23 @@ public class MyAssembler {
                         && GetAddressOfSymbol(operand, csectNum) == Constants.ADDRESS_EXTREF ) {
                     System.out.println("M : " + operand);
 
-                    ObjectCode objectCodeUnit = new ObjectCode('M', objectCode, locationCounter);
+                    int offset = locationCounterIncrease;
+                    if( token.GetOperator().charAt(0) == '+' ) {
+                        offset -= 1;
+                    }
+
+                    ObjectCode objectCodeUnit = new ObjectCode('M', objectCode.getValue(), locationCounter - offset);
                     objectCodeUnit.SetSymbol(operand);
+                    objectCodeUnit.SetFormat( objectCode.getKey() );
                     _objectCodes.get(csectNum).add(objectCodeUnit);
                 }
-            }
-
-            locationCounter += IncreaseLocationCounterByToken(token);
-        }
-
-
-        System.out.println();
-        System.out.println();
-
-        for(Integer controlSectionNumber : _objectCodes.keySet()) {
-            for(ObjectCode objectCode : _objectCodes.get(controlSectionNumber)) {
-                System.out.println( String.format("%c %08X %08X %8s", objectCode.GetType(), objectCode.GetAddress(), objectCode.GetCode(), objectCode.GetSymbol()) );
             }
         }
 
         return true;
     }
 
-    private int CalculateObjectCode(SourceToken token, int locationCounter, int controlSectionNumber) {
+    private Pair<Integer, Integer> CalculateObjectCode(SourceToken token, int locationCounter, int controlSectionNumber) {
         if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_BYTE_STRING) ) {
             return CalculateObjectCodeBYTE(token);
         } else if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_WORD_STRING) ) {
@@ -513,7 +528,7 @@ public class MyAssembler {
 
         InstructionData instructionData = _instructionTable.GetInstructionData(token.GetOperator());
         if( instructionData == null ) {
-            return -1;
+            return new Pair<>(-1, -1);
         }
 
         if( operator.charAt(0) == '+' ) {
@@ -530,7 +545,8 @@ public class MyAssembler {
             code += (instructionData.GetOpCode() + n * 2 + i) << 24;
             code += x << 23;
             code += e << 20;
-            return code;
+
+            return new Pair<>(4, code);
         } else {
             if( instructionData.IsValidFormat(2) ) {
                 // format 2
@@ -541,7 +557,7 @@ public class MyAssembler {
                     code += GetAddressOfRegister( token.GetOperands().get(1) );
                 }
 
-                return code;
+                return new Pair<>(2, code);
             } else {
                 // format 3
                 locationCounter += Constants.SIZE_OF_FORMAT3;
@@ -582,25 +598,29 @@ public class MyAssembler {
                 code += e << 12;
                 code += (0x00000FFF & disp);
 
-                return code;
+                return new Pair<>(Constants.SIZE_OF_WORD, code);
             }
         }
     }
 
-    private int CalculateObjectCodeBYTE(SourceToken token) {
+    private Pair<Integer, Integer> CalculateObjectCodeBYTE(SourceToken token) {
         String operand = token.GetOperands().get(0);
         int code = 0;
+        int left = 0, right = 0;
+        int length = 0;
 
         if( operand.charAt(0) == 'C' ) {
-            int left = 2;
-            int right = operand.length() - 2;
+            left = 2;
+            right = operand.length() - 2;
+            length = right - left + 1;
             for( int i = left; i <= right; i ++ ) {
                 char c = operand.charAt(i);
                 code += c << (8 * Math.abs(i - right));
             }
         } else if( operand.charAt(0) == 'X' ) {
-            int left = 2;
-            int right = 3;
+            left = 2;
+            right = 3;
+            length = 1;
             for( int i = left; i <= right; i ++ ) {
                 char c = operand.charAt(i);
                 int tmp = c > '9' ? c - 'A' + 10 : c - '0';
@@ -608,19 +628,20 @@ public class MyAssembler {
             }
         }
 
-        return code;
+        return new Pair<>(length, code);
     }
 
-    private int CalculateObjectCodeWORD(SourceToken token, int controlSectionNumber) {
+    private Pair<Integer, Integer> CalculateObjectCodeWORD(SourceToken token, int controlSectionNumber) {
         if( token.GetOperands().size() == 1 ) {
             String operand = token.GetOperands().get(0);
             int address = GetAddressOfSymbol(operand, controlSectionNumber);
             if( address != 0 ) {
-                return Integer.parseInt( token.GetOperands().get(0) );
+                return new Pair<>(Constants.SIZE_OF_WORD,
+                        Integer.parseInt( token.GetOperands().get(0) ));
             }
         }
 
-        return 0;
+        return new Pair<>(0, 0);
     }
 
     private boolean TransformableToInteger(String str) {
@@ -631,6 +652,147 @@ public class MyAssembler {
         }
 
         return true;
+    }
+
+    private boolean PrintObjectCodes() {
+        System.out.println();
+        System.out.println();
+
+        for(Integer controlSectionNumber : _objectCodes.keySet()) {
+            ArrayList<ObjectCode> objectCodes = _objectCodes.get(controlSectionNumber);
+
+            ArrayList<ObjectCode> header = GetSpecificObjectCodeList(objectCodes, Constants.RECORD_PREFIX_HEADER);
+            ArrayList<ObjectCode> externalDefines = GetSpecificObjectCodeList(objectCodes, Constants.RECORD_PREFIX_EXTDEF);
+            ArrayList<ObjectCode> externalReferences = GetSpecificObjectCodeList(objectCodes, Constants.RECORD_PREFIX_EXTREF);
+            ArrayList<ObjectCode> texts = GetSpecificObjectCodeList(objectCodes, Constants.RECORD_PREFIX_TEXT);
+            ArrayList<ObjectCode> literals = GetSpecificObjectCodeList(objectCodes, Constants.RECORD_PREFIX_LITERAL);
+            ArrayList<ObjectCode> modifications = GetSpecificObjectCodeList(objectCodes, Constants.RECORD_PREFIX_MODIFICATION);
+            ArrayList<ObjectCode> end = GetSpecificObjectCodeList(objectCodes, Constants.RECORD_PREFIX_END);
+
+            System.out.println( String.format("H%-6s%06X%06X",
+                    header.get(0).GetSymbol(),
+                    header.get(0).GetAddress(),
+                    end.get(0).GetAddress() - header.get(0).GetAddress()) );
+
+            if( externalDefines.size() > 0 ) {
+                System.out.print("D");
+                for(ObjectCode objectCode : externalDefines) {
+                    System.out.print( String.format("%6s%06X", objectCode.GetSymbol(), objectCode.GetAddress()) );
+                }
+                System.out.println();
+            }
+
+            if( externalReferences.size() > 0 ) {
+                System.out.print("R");
+                for(ObjectCode objectCode : externalReferences) {
+                    System.out.print( String.format("%-6s", objectCode.GetSymbol()) );
+                }
+                System.out.println();
+            }
+
+
+            int length;
+            String textRecord;
+            //
+            // TEXT
+            //
+            length = 0;
+            textRecord = "";
+            for( int i = 0; i < texts.size(); i ++ ) {
+                ObjectCode objectCode = texts.get(i);
+                switch( objectCode.GetFormat() ) {
+                    case 1:
+                        length += 1 * 2;
+                        textRecord += String.format("%02X", objectCode.GetCode());
+                        break;
+                    case 2:
+                        length += 2 * 2;
+                        textRecord += String.format("%04X", objectCode.GetCode());
+                        break;
+                    case 3:
+                        length += 3 * 2;
+                        textRecord += String.format("%06X", objectCode.GetCode());
+                        break;
+                    case 4:
+                        length += 4 * 2;
+                        textRecord += String.format("%08X", objectCode.GetCode());
+                        break;
+                }
+
+                if( i < texts.size() - 1
+                        && length + texts.get(i + 1).GetFormat() * 2 >= Constants.TEXT_RECORD_MAX ) {
+                    System.out.println( "T" + textRecord );
+                    textRecord = "";
+                    length = 0;
+                }
+            }
+            if( textRecord.length() > 0 ) {
+                System.out.println( "T" + textRecord );
+            }
+
+
+            //
+            // LITERAL
+            //
+            length = 0;
+            textRecord = "";
+            for( int i = 0; i < literals.size(); i ++ ) {
+                ObjectCode objectCode = literals.get(i);
+                switch( objectCode.GetFormat() ) {
+                    case 1:
+                        length += 1 * 2;
+                        textRecord += String.format("%02X", objectCode.GetCode());
+                        break;
+                    case 2:
+                        length += 2 * 2;
+                        textRecord += String.format("%04X", objectCode.GetCode());
+                        break;
+                    case 3:
+                        length += 3 * 2;
+                        textRecord += String.format("%06X", objectCode.GetCode());
+                        break;
+                }
+
+                if( i < texts.size() - 1
+                        && length + texts.get(i + 1).GetFormat() * 2 >= Constants.TEXT_RECORD_MAX ) {
+                    System.out.println( "T" + textRecord );
+                    textRecord = "";
+                    length = 0;
+                }
+            }
+            if( textRecord.length() > 0 ) {
+                System.out.println( "T" + textRecord );
+            }
+
+
+            //
+            // MODIFICATION
+            //
+            for( ObjectCode objectCode : modifications ) {
+                int offset = objectCode.GetFormat() == 4 ? 5 : 6;
+                System.out.println( String.format("M%06X%02X+%-6s", objectCode.GetAddress(), offset, objectCode.GetSymbol()) );
+            }
+
+
+            if( controlSectionNumber == 1 ) {
+                System.out.println( String.format("E%06X\n\n", 0) );
+            } else {
+                System.out.println( String.format("E\n\n") );
+            }
+        }
+
+        return true;
+    }
+
+    ArrayList<ObjectCode> GetSpecificObjectCodeList(ArrayList<ObjectCode> objectCodes, char type) {
+        ArrayList<ObjectCode> ret = new ArrayList<>();
+        for(ObjectCode objectCode : objectCodes) {
+            if( objectCode.GetType() == type ) {
+                ret.add(objectCode);
+            }
+        }
+
+        return ret;
     }
 
 }

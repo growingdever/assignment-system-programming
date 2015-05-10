@@ -22,4 +22,15 @@ public class Constants {
     public static final String ASSEMBLY_DIRECTIVE_EXTREF_STRING = "EXTREF";
     public static final String ASSEMBLY_DIRECTIVE_CSECT_STRING = "CSECT";
     public static final String ASSEMBLY_DIRECTIVE_EQU_STRING = "EQU";
+
+    public static final char RECORD_PREFIX_HEADER = 'H';
+    public static final char RECORD_PREFIX_EXTDEF = 'D';
+    public static final char RECORD_PREFIX_EXTREF = 'R';
+    public static final char RECORD_PREFIX_TEXT = 'T';
+    public static final char RECORD_PREFIX_MODIFICATION = 'M';
+    public static final char RECORD_PREFIX_LITERAL = 'L';
+    public static final char RECORD_PREFIX_END = 'E';
+
+    public static final int TEXT_RECORD_MAX = 0x1E * 2;
+
 }
