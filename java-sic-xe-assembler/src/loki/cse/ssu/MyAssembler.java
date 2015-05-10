@@ -694,13 +694,14 @@ public class MyAssembler {
             }
 
 
-            int length;
+            int length, startAddress;
             String textRecord;
             //
             // TEXT
             //
             length = 0;
             textRecord = "";
+            startAddress = texts.get(0).GetAddress();
             for( int i = 0; i < texts.size(); i ++ ) {
                 ObjectCode objectCode = texts.get(i);
                 switch( objectCode.GetFormat() ) {
@@ -724,47 +725,76 @@ public class MyAssembler {
 
                 if( i < texts.size() - 1
                         && length + texts.get(i + 1).GetFormat() * 2 >= Constants.TEXT_RECORD_MAX ) {
-                    System.out.println( Constants.RECORD_PREFIX_TEXT + textRecord );
+                    String formatted = String.format("%c%06X%02X%s",
+                            Constants.RECORD_PREFIX_TEXT,
+                            startAddress,
+                            textRecord.length() / 2,
+                            textRecord);
+                    System.out.println( formatted );
+
                     textRecord = "";
                     length = 0;
+
+                    startAddress = texts.get(i + 1).GetAddress();
                 }
             }
             if( textRecord.length() > 0 ) {
-                System.out.println( Constants.RECORD_PREFIX_TEXT + textRecord );
+                String formatted = String.format("%c%06X%02X%s",
+                        Constants.RECORD_PREFIX_TEXT,
+                        startAddress,
+                        textRecord.length() / 2,
+                        textRecord);
+                System.out.println( formatted );
             }
 
 
             //
             // LITERAL
             //
-            length = 0;
-            textRecord = "";
-            for( int i = 0; i < literals.size(); i ++ ) {
-                ObjectCode objectCode = literals.get(i);
-                switch( objectCode.GetFormat() ) {
-                    case 1:
-                        length += 1 * 2;
-                        textRecord += String.format("%02X", objectCode.GetCode());
-                        break;
-                    case 2:
-                        length += 2 * 2;
-                        textRecord += String.format("%04X", objectCode.GetCode());
-                        break;
-                    case 3:
-                        length += 3 * 2;
-                        textRecord += String.format("%06X", objectCode.GetCode());
-                        break;
-                }
+            if( literals.size() > 0 ) {
+                length = 0;
+                textRecord = "";
+                startAddress = literals.get(0).GetAddress();
+                for( int i = 0; i < literals.size(); i ++ ) {
+                    ObjectCode objectCode = literals.get(i);
+                    switch( objectCode.GetFormat() ) {
+                        case 1:
+                            length += 1 * 2;
+                            textRecord += String.format("%02X", objectCode.GetCode());
+                            break;
+                        case 2:
+                            length += 2 * 2;
+                            textRecord += String.format("%04X", objectCode.GetCode());
+                            break;
+                        case 3:
+                            length += 3 * 2;
+                            textRecord += String.format("%06X", objectCode.GetCode());
+                            break;
+                    }
 
-                if( i < texts.size() - 1
-                        && length + texts.get(i + 1).GetFormat() * 2 >= Constants.TEXT_RECORD_MAX ) {
-                    System.out.println( Constants.RECORD_PREFIX_TEXT + textRecord );
-                    textRecord = "";
-                    length = 0;
+                    if( i < literals.size() - 1
+                            && length + literals.get(i + 1).GetFormat() * 2 >= Constants.TEXT_RECORD_MAX ) {
+                        String formatted = String.format("%c%06X%02X%s",
+                                Constants.RECORD_PREFIX_TEXT,
+                                startAddress,
+                                textRecord.length() / 2,
+                                textRecord);
+                        System.out.println( formatted );
+
+                        textRecord = "";
+                        length = 0;
+
+                        startAddress = literals.get(i + 1).GetAddress();
+                    }
                 }
-            }
-            if( textRecord.length() > 0 ) {
-                System.out.println( Constants.RECORD_PREFIX_TEXT + textRecord );
+                if( textRecord.length() > 0 ) {
+                    String formatted = String.format("%c%06X%02X%s",
+                            Constants.RECORD_PREFIX_TEXT,
+                            startAddress,
+                            textRecord.length() / 2,
+                            textRecord);
+                    System.out.println( formatted );
+                }
             }
 
 
