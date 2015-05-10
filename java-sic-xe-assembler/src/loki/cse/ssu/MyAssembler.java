@@ -483,19 +483,20 @@ public class MyAssembler {
             }
 
             for(String operand : token.GetOperands()) {
+                String onlySymbol = operand;
                 if( operand.charAt(0) == '@'
                         || operand.charAt(0) == '#'
                         || operand.charAt(0) == '+'
                         || operand.charAt(0) == '-' ) {
-                    operand = operand.substring(1);
+                    onlySymbol = operand.substring(1);
                 }
 
-                if( TransformableToInteger(operand) ) {
+                if( TransformableToInteger(onlySymbol) ) {
                     continue;
                 }
 
-                if( GetAddressOfRegister(operand) == -1
-                        && GetAddressOfSymbol(operand, csectNum) == Constants.ADDRESS_EXTREF ) {
+                if( GetAddressOfRegister(onlySymbol) == -1
+                        && GetAddressOfSymbol(onlySymbol, csectNum) == Constants.ADDRESS_EXTREF ) {
                     System.out.println("M : " + operand);
 
                     int offset = locationCounterIncrease;
@@ -772,7 +773,11 @@ public class MyAssembler {
             //
             for( ObjectCode objectCode : modifications ) {
                 int offset = objectCode.GetFormat() == 4 ? 5 : 6;
-                System.out.println( String.format("M%06X%02X+%-6s", objectCode.GetAddress(), offset, objectCode.GetSymbol()) );
+                String symbol = objectCode.GetSymbol();
+                if( symbol.charAt(0) != '-' && symbol.charAt(0) != '+' ) {
+                    symbol = "+" + symbol;
+                }
+                System.out.println( String.format("M%06X%02X%-7s", objectCode.GetAddress(), offset, symbol) );
             }
 
 
