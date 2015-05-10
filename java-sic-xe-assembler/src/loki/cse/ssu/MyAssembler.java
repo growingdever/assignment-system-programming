@@ -5,7 +5,9 @@ import javafx.util.Pair;
 import javax.xml.transform.Source;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 
@@ -21,6 +23,7 @@ public class MyAssembler {
     ArrayList<String> _inputSourceLines;
     ArrayList<SourceToken> _tokens;
     ArrayList<Symbol> _symbols;
+    HashMap<Integer, ArrayList<ObjectCode>> _objectCodes;
 
 
 
@@ -32,6 +35,7 @@ public class MyAssembler {
         _inputSourceLines = new ArrayList<>();
         _tokens = new ArrayList<>();
         _symbols = new ArrayList<>();
+        _objectCodes = new HashMap<>();
     }
 
     public static void Start() {
@@ -397,33 +401,57 @@ public class MyAssembler {
             if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_START_STRING)
                     || token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_CSECT_STRING) ) {
                 csectNum++;
+
                 if( token.GetOperands().size() > 0 ) {
                     locationCounter = Integer.parseInt( token.GetOperands().get(0) );
                 } else {
                     locationCounter = 0;
                 }
+
+                _objectCodes.put(csectNum, new ArrayList<>());
+                ObjectCode objectCode = new ObjectCode('H', 0, locationCounter);
+                objectCode.SetSymbol(token.GetLabel());
+                _objectCodes.get(csectNum).add(objectCode);
                 continue;
             }
 
+            if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_EXTDEF_STRING) ) {
+                for(String symbol : token.GetOperands()) {
+                    ObjectCode objectCode = new ObjectCode('D', 0, 0);
+                    objectCode.SetSymbol(symbol);
+                    _objectCodes.get(csectNum).add( objectCode );
+                }
+            }
+
             if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_EXTREF_STRING) ) {
+                for(String symbol : token.GetOperands()) {
+                    ObjectCode objectCode = new ObjectCode('R', 0, 0);
+                    objectCode.SetSymbol(symbol);
+                    _objectCodes.get(csectNum).add( objectCode );
+                }
+
                 continue;
             }
 
             if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_END_STRING) ) {
+                _objectCodes.get(csectNum).add(new ObjectCode('E', 0, locationCounter));
                 continue;
             }
 
-            int objectCode = 0;
-            objectCode = CalculateObjectCode(token, locationCounter, csectNum);
-
+            int objectCode = CalculateObjectCode(token, locationCounter, csectNum);
             if( objectCode == -1 ) {
                 String formatted = String.format("%8s %8s", token.GetLabel(), token.GetOperator());
                 System.out.println(formatted);
             } else {
                 String formatted = String.format("%8s %8s %08X", token.GetLabel(), token.GetOperator(), objectCode);
                 System.out.println(formatted);
+
+                _objectCodes.get(csectNum).add(new ObjectCode('T', objectCode, locationCounter));
             }
 
+            //
+            // generate modification row
+            //
             if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_BYTE_STRING)
                     || token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_WORD_STRING) ) {
                 continue;
@@ -448,10 +476,24 @@ public class MyAssembler {
                 if( GetAddressOfRegister(operand) == -1
                         && GetAddressOfSymbol(operand, csectNum) == Constants.ADDRESS_EXTREF ) {
                     System.out.println("M : " + operand);
+
+                    ObjectCode objectCodeUnit = new ObjectCode('M', objectCode, locationCounter);
+                    objectCodeUnit.SetSymbol(operand);
+                    _objectCodes.get(csectNum).add(objectCodeUnit);
                 }
             }
 
             locationCounter += IncreaseLocationCounterByToken(token);
+        }
+
+
+        System.out.println();
+        System.out.println();
+
+        for(Integer controlSectionNumber : _objectCodes.keySet()) {
+            for(ObjectCode objectCode : _objectCodes.get(controlSectionNumber)) {
+                System.out.println( String.format("%c %08X %08X %8s", objectCode.GetType(), objectCode.GetAddress(), objectCode.GetCode(), objectCode.GetSymbol()) );
+            }
         }
 
         return true;
