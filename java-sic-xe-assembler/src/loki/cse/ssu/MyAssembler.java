@@ -7,6 +7,8 @@ import javafx.util.Pair;
 import javax.xml.transform.Source;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -72,7 +74,7 @@ public class MyAssembler {
             return false;
         }
 
-        if( ! PrintObjectCodes() ) {
+        if( ! PrintObjectCodes("output") ) {
             System.err.println("error! - PrintObjectCoeds");
         }
 
@@ -674,9 +676,17 @@ public class MyAssembler {
         return true;
     }
 
-    private boolean PrintObjectCodes() {
-        System.out.println();
-        System.out.println();
+    private boolean PrintObjectCodes(String path) {
+        PrintStream outPrintStream;
+        try {
+            File outputFile = new File(path);
+            outPrintStream = new PrintStream(new FileOutputStream(outputFile));
+            System.setOut(outPrintStream);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        }
+
 
         for(Integer controlSectionNumber : _objectCodes.keySet()) {
             ArrayList<ObjectCode> objectCodes = _objectCodes.get(controlSectionNumber);
@@ -829,9 +839,9 @@ public class MyAssembler {
 
 
             if( controlSectionNumber == 1 ) {
-                System.out.println( String.format( Constants.RECORD_PREFIX_END + "%06X\n\n", 0) );
+                System.out.println( String.format( Constants.RECORD_PREFIX_END + "%06X\n", 0) );
             } else {
-                System.out.println( String.format( Constants.RECORD_PREFIX_END + "\n\n") );
+                System.out.println( String.format( Constants.RECORD_PREFIX_END + "\n") );
             }
         }
 
