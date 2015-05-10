@@ -419,7 +419,7 @@ public class MyAssembler {
                 }
 
                 _objectCodes.put(csectNum, new ArrayList<>());
-                ObjectCode objectCode = new ObjectCode('H', 0, locationCounter);
+                ObjectCode objectCode = new ObjectCode(Constants.RECORD_PREFIX_HEADER, 0, locationCounter);
                 objectCode.SetSymbol(token.GetLabel());
                 _objectCodes.get(csectNum).add(objectCode);
                 continue;
@@ -427,7 +427,7 @@ public class MyAssembler {
 
             if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_EXTDEF_STRING) ) {
                 for(String symbol : token.GetOperands()) {
-                    ObjectCode objectCode = new ObjectCode('D', 0, GetAddressOfSymbol(symbol, csectNum));
+                    ObjectCode objectCode = new ObjectCode(Constants.RECORD_PREFIX_EXTDEF, 0, GetAddressOfSymbol(symbol, csectNum));
                     objectCode.SetSymbol(symbol);
                     _objectCodes.get(csectNum).add( objectCode );
                 }
@@ -437,7 +437,7 @@ public class MyAssembler {
 
             if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_EXTREF_STRING) ) {
                 for(String symbol : token.GetOperands()) {
-                    ObjectCode objectCode = new ObjectCode('R', 0, 0);
+                    ObjectCode objectCode = new ObjectCode(Constants.RECORD_PREFIX_EXTREF, 0, 0);
                     objectCode.SetSymbol(symbol);
                     _objectCodes.get(csectNum).add( objectCode );
                 }
@@ -478,7 +478,7 @@ public class MyAssembler {
                 continue;
             }
 
-            if( token.GetOperator().equals("BYTE") ) {
+            if( token.GetOperator().equals(Constants.ASSEMBLY_DIRECTIVE_BYTE_STRING) ) {
                 continue;
             }
 
@@ -503,7 +503,9 @@ public class MyAssembler {
                         offset -= 1;
                     }
 
-                    ObjectCode objectCodeUnit = new ObjectCode('M', objectCode.getValue(), locationCounter - offset);
+                    ObjectCode objectCodeUnit = new ObjectCode(Constants.RECORD_PREFIX_MODIFICATION,
+                            objectCode.getValue(),
+                            locationCounter - offset);
                     objectCodeUnit.SetSymbol(operand);
                     objectCodeUnit.SetFormat( objectCode.getKey() );
                     _objectCodes.get(csectNum).add(objectCodeUnit);
@@ -675,7 +677,7 @@ public class MyAssembler {
                     end.get(0).GetAddress() - header.get(0).GetAddress()) );
 
             if( externalDefines.size() > 0 ) {
-                System.out.print("D");
+                System.out.print(Constants.RECORD_PREFIX_EXTDEF);
                 for(ObjectCode objectCode : externalDefines) {
                     System.out.print( String.format("%6s%06X", objectCode.GetSymbol(), objectCode.GetAddress()) );
                 }
@@ -683,7 +685,7 @@ public class MyAssembler {
             }
 
             if( externalReferences.size() > 0 ) {
-                System.out.print("R");
+                System.out.print(Constants.RECORD_PREFIX_EXTREF);
                 for(ObjectCode objectCode : externalReferences) {
                     System.out.print( String.format("%-6s", objectCode.GetSymbol()) );
                 }
@@ -721,13 +723,13 @@ public class MyAssembler {
 
                 if( i < texts.size() - 1
                         && length + texts.get(i + 1).GetFormat() * 2 >= Constants.TEXT_RECORD_MAX ) {
-                    System.out.println( "T" + textRecord );
+                    System.out.println( Constants.RECORD_PREFIX_TEXT + textRecord );
                     textRecord = "";
                     length = 0;
                 }
             }
             if( textRecord.length() > 0 ) {
-                System.out.println( "T" + textRecord );
+                System.out.println( Constants.RECORD_PREFIX_TEXT + textRecord );
             }
 
 
@@ -755,13 +757,13 @@ public class MyAssembler {
 
                 if( i < texts.size() - 1
                         && length + texts.get(i + 1).GetFormat() * 2 >= Constants.TEXT_RECORD_MAX ) {
-                    System.out.println( "T" + textRecord );
+                    System.out.println( Constants.RECORD_PREFIX_TEXT + textRecord );
                     textRecord = "";
                     length = 0;
                 }
             }
             if( textRecord.length() > 0 ) {
-                System.out.println( "T" + textRecord );
+                System.out.println( Constants.RECORD_PREFIX_TEXT + textRecord );
             }
 
 
@@ -775,9 +777,9 @@ public class MyAssembler {
 
 
             if( controlSectionNumber == 1 ) {
-                System.out.println( String.format("E%06X\n\n", 0) );
+                System.out.println( String.format( Constants.RECORD_PREFIX_END + "%06X\n\n", 0) );
             } else {
-                System.out.println( String.format("E\n\n") );
+                System.out.println( String.format( Constants.RECORD_PREFIX_END + "\n\n") );
             }
         }
 
