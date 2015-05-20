@@ -413,8 +413,9 @@ int init_input_file(char *path)
 	char line[MAX_LENGTH_INSTRUCTION_LINE];
 	line_num = 0;
 	while( fgets( line, MAX_LENGTH_INSTRUCTION_LINE, fp ) ) {
-		char *str = (char*)malloc(sizeof(char) * (strlen(line) + 1));
-		strncpy(str, line, MAX_LENGTH_INSTRUCTION_LINE);
+		size_t length = sizeof(char) * (strlen(line) + 1);
+		char *str = (char*)malloc(length);
+		strncpy(str, line, length);
 		input_data[line_num++] = str;
 
 		// 개행문자 없앰
