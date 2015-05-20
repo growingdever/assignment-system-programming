@@ -48,6 +48,21 @@ public class MyAssembler {
         if( ! Initialize() ) {
             System.err.println("ERROR! - Initialize");
         }
+
+        if( ! Pass1() ) {
+            System.err.println("error! - Pass1");
+            return;
+        }
+
+        if( ! Pass2() ) {
+            System.err.println("error! - Pass2");
+            return;
+        }
+
+        if( ! PrintObjectCodes("output") ) {
+            System.err.println("error! - PrintObjectCoeds");
+            return;
+        }
     }
 
     boolean Initialize() {
@@ -59,20 +74,6 @@ public class MyAssembler {
         if( ! LoadInputSourceLines(_inputSourcePath) ) {
             System.err.println("error! - LoadInputSourceLines");
             return false;
-        }
-
-        if( ! Pass1() ) {
-            System.err.println("error! - Pass1");
-            return false;
-        }
-
-        if( ! Pass2() ) {
-            System.err.println("error! - Pass2");
-            return false;
-        }
-
-        if( ! PrintObjectCodes("output") ) {
-            System.err.println("error! - PrintObjectCoeds");
         }
 
         return true;
