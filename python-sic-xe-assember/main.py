@@ -1,6 +1,7 @@
 import re
 from SourceToken import *
 from Symbol import *
+from ObjectCode import *
 
 SIZE_OF_WORD = 3
 
@@ -8,6 +9,7 @@ instruction_table = dict()
 input_source_lines = []
 source_tokens = []
 symbol_table = []
+object_codes = dict()
 
 
 def read_instruction_table():
@@ -209,6 +211,13 @@ def add_all_symbols():
         location_counter += increase_location_counter_by_token(token)
 
 
+def get_address_of_symbol(str_symbol, control_section_number):
+    for symbol in symbol_table:
+        if symbol.is_same(str_symbol, control_section_number):
+            return symbol.address
+    return -1
+
+
 def pass1():
     parsing_all_tokens()
     generate_literals()
@@ -223,11 +232,210 @@ def pass1():
         print '%8s %08X %d' % (symbol.symbol, symbol.address, symbol.control_section_number)
 
 
+def calculate_object_code_byte(token):
+    operand = token.operands[0]
+    code = 0
+    left = 0
+    right = 0
+    length = 0
+
+    if operand[0] == 'C':
+        left = 2
+        right = len(operand) - 2
+        length = right - left + 1
+        for i in xrange(left, right + 1):
+            c = ord(operand[i])
+            code += c << (8 * abs(i - right))
+    elif operand[0] == 'X':
+        left = 2
+        right = 3
+        length = 1
+        for i in xrange(left, right + 1):
+            c = ord(operand[i])
+            tmp = c - ord('A') + 10
+            if c > ord('9'):
+                tmp = c - ord('0')
+            code += tmp << (4 * abs(i - right))
+    return length, code
+
+def calculate_object_code_word(token, control_section_number):
+    if len(token.operands) == 1:
+        operand = token.operands[0]
+        address = get_address_of_symbol(operand, control_section_number)
+        if address != 0:
+            return SIZE_OF_WORD, int(operand)
+
+    value = 0
+    for operand in token.operands:
+        only_operand_str = ''
+        if operand[0] == '+' or operand[0] == '-':
+            only_operand_str = operand[1:]
+
+        if operand.isdigit():
+            if operand[0] == '+':
+                value += int(only_operand_str)
+            else:
+                value -= int(only_operand_str)
+
+    return SIZE_OF_WORD, value
+
+
+def calculate_object_code(token, location_counter, control_section_number):
+    if token.operator == 'BYTE':
+        return calculate_object_code_byte(token)
+    elif token.operator == 'WORD':
+        return calculate_object_code_word(token, control_section_number)
+
+    if token.operator not in instruction_table:
+        return -1, -1
+
+    n = 1
+    i = 1
+    x = 0
+    b = 0
+    p = 0
+    e = 0
+    disp = 0
+    code = 0
+
+    inst_data = instruction_table[token.operator]
+
+    if token.operator[0] == '+':
+        if len(token.operands) >= 2 and token.operands[1][0] == 'X':
+            x = 1
+        n = 1
+        i = 1
+        e = 1
+
+        code += (get_opcode_by_mnemonic(token.operator) * 2 + i) << 24
+        code += x << 23
+        code += e << 20
+        return 4, code
+    else:
+        if '2' in inst_data:
+            code += get_opcode_by_mnemonic(token.operator) << 8
+            code += get_address_of_register(token.operands[0]) << 4
+            if len(token.operands) > 1:
+                code += get_address_of_register(token.operands[1])
+            return 2, code
+        else:
+            location_counter += 3
+            p = 1
+
+            if len(token.operands) == 0:
+                n = i = 1
+                x = b = p = e = 0
+            else:
+                operand = token.operands[0]
+                if operand[0] == '#':
+                    n = 0
+                    i = 1
+                    p = 0
+                    disp = int(operand[1:])
+                elif operand[0] == '@':
+                    n = 1
+                    i = 0
+                    disp = get_address_of_symbol(operand[1:], control_section_number) - location_counter
+                else:
+                    n = 1
+                    i = 1
+                    disp = get_address_of_symbol(operand, control_section_number) - location_counter
+
+            if len(token.operands) >= 2 and token.operands[1][0] == 'X':
+                x = 1
+
+            code += (get_opcode_by_mnemonic(token.operator) + n * 2 + i) << 16
+            code += x << 15
+            code += b << 14
+            code += p << 13
+            code += e << 12
+            code += 0x00000FFF & disp
+            return SIZE_OF_WORD, code
+
+
 def pass2():
-    pass
+    control_section_number = 0
+    location_counter = 0
+
+    for token in source_tokens:
+        if token.operator == 'START' or token.operator == 'CSECT':
+            if control_section_number >= 1:
+                object_codes[control_section_number].append(ObjectCode('E', 0, location_counter))
+
+            control_section_number += 1
+
+            if len(token.operands) > 0:
+                location_counter = int(token.operands[0])
+            else:
+                location_counter = 0
+
+            object_codes[control_section_number] = []
+            object_code = ObjectCode('H', 0, location_counter)
+            object_code.symbol = token.label
+            object_codes[control_section_number].append(object_code)
+            continue
+
+        if token.operator == 'EXTDEF':
+            for symbol in token.operands:
+                object_code = ObjectCode('D', 0, get_address_of_symbol(symbol, control_section_number))
+                object_code.symbol = symbol
+                object_codes[control_section_number].append(object_code)
+
+        if token.operator == 'EXTREF':
+            for symbol in token.operands:
+                object_code = ObjectCode('R', 0, get_address_of_symbol(symbol, control_section_number))
+                object_code.symbol = symbol
+                object_codes[control_section_number].append(object_code)
+
+        if token.operator == 'END':
+            object_codes[control_section_number].append(ObjectCode('E', 0, location_counter))
+
+        object_code_tuple = calculate_object_code(token, location_counter, control_section_number)
+        if object_code_tuple[0] == -1:
+            pass
+        else:
+            type = 'T'
+            if token.generated_by_ltorg and token.label and token.label[0] == '=':
+                type = 'L'
+
+            object_code_unit = ObjectCode(type, object_code_tuple[1], location_counter)
+            object_code_unit.size = object_code_tuple[0]
+            object_codes[control_section_number].append(object_code_unit)
+
+        location_counter_increase = increase_location_counter_by_token(token)
+        location_counter += location_counter_increase
+
+        if len(token.operands) > 0 and token.operands[0] == '*':
+            continue
+
+        if token.operator == 'BYTE':
+            continue
+
+        for operand in token.operands:
+            only_str_symbol = ''
+            if operand[0] == '@' or operand[0] == '#' or operand[0] == '+' or operand[0] == '-':
+                only_str_symbol = operand[1:]
+
+            if only_str_symbol.isdigit():
+                continue
+
+            if get_address_of_register(only_str_symbol) == -1 \
+                    and get_address_of_symbol(only_str_symbol, control_section_number) == -1:
+                offset = location_counter_increase
+                if token.operator[0] == '+':
+                    offset -= 1
+
+                object_code_unit = ObjectCode('M', object_code_tuple[1], location_counter - offset)
+                object_code_unit.symbol = operand
+                object_code_unit.size = object_code_tuple[0]
+                object_codes[control_section_number].append(object_code_unit)
 
 
 def print_object_codes():
+    for control_section_num in object_codes:
+        for object_code in object_codes[control_section_num]:
+            print '%d %c %08X %08X' % (control_section_num, object_code.type, object_code.address, object_code.code)
+
     pass
 
 
