@@ -226,7 +226,9 @@ def pass1():
     for token in source_tokens:
         print '%7s %-7s ' % (token.label, token.operator),
         print ",".join(token.operands)
-    pass
+
+    print ''
+    print ''
 
     for symbol in symbol_table:
         print '%8s %08X %d' % (symbol.symbol, symbol.address, symbol.control_section_number)
@@ -252,11 +254,14 @@ def calculate_object_code_byte(token):
         length = 1
         for i in xrange(left, right + 1):
             c = ord(operand[i])
-            tmp = c - ord('A') + 10
+            tmp = 0
             if c > ord('9'):
+                tmp = c - ord('A') + 10
+            else:
                 tmp = c - ord('0')
             code += tmp << (4 * abs(i - right))
     return length, code
+
 
 def calculate_object_code_word(token, control_section_number):
     if len(token.operands) == 1:
@@ -286,7 +291,10 @@ def calculate_object_code(token, location_counter, control_section_number):
     elif token.operator == 'WORD':
         return calculate_object_code_word(token, control_section_number)
 
-    if token.operator not in instruction_table:
+    only_operator_str = token.operator
+    if only_operator_str[0] == '+':
+        only_operator_str = only_operator_str[1:]
+    if only_operator_str not in instruction_table:
         return -1, -1
 
     n = 1
@@ -298,7 +306,7 @@ def calculate_object_code(token, location_counter, control_section_number):
     disp = 0
     code = 0
 
-    inst_data = instruction_table[token.operator]
+    inst_data = instruction_table[only_operator_str]
 
     if token.operator[0] == '+':
         if len(token.operands) >= 2 and token.operands[1][0] == 'X':
@@ -307,7 +315,7 @@ def calculate_object_code(token, location_counter, control_section_number):
         i = 1
         e = 1
 
-        code += (get_opcode_by_mnemonic(token.operator) * 2 + i) << 24
+        code += (get_opcode_by_mnemonic(only_operator_str) + n * 2 + i) << 24
         code += x << 23
         code += e << 20
         return 4, code
@@ -357,6 +365,9 @@ def pass2():
     control_section_number = 0
     location_counter = 0
 
+    print ''
+    print ''
+
     for token in source_tokens:
         if token.operator == 'START' or token.operator == 'CSECT':
             if control_section_number >= 1:
@@ -380,20 +391,25 @@ def pass2():
                 object_code = ObjectCode('D', 0, get_address_of_symbol(symbol, control_section_number))
                 object_code.symbol = symbol
                 object_codes[control_section_number].append(object_code)
+            continue
 
         if token.operator == 'EXTREF':
             for symbol in token.operands:
                 object_code = ObjectCode('R', 0, get_address_of_symbol(symbol, control_section_number))
                 object_code.symbol = symbol
                 object_codes[control_section_number].append(object_code)
+            continue
 
         if token.operator == 'END':
             object_codes[control_section_number].append(ObjectCode('E', 0, location_counter))
+            continue
 
         object_code_tuple = calculate_object_code(token, location_counter, control_section_number)
         if object_code_tuple[0] == -1:
-            pass
+            print '%8s %8s' % (token.label, token.operator)
         else:
+            print '%8s %8s %08X' % (token.label, token.operator, object_code_tuple[1])
+
             type = 'T'
             if token.generated_by_ltorg and token.label and token.label[0] == '=':
                 type = 'L'
@@ -412,7 +428,7 @@ def pass2():
             continue
 
         for operand in token.operands:
-            only_str_symbol = ''
+            only_str_symbol = operand
             if operand[0] == '@' or operand[0] == '#' or operand[0] == '+' or operand[0] == '-':
                 only_str_symbol = operand[1:]
 
@@ -434,9 +450,7 @@ def pass2():
 def print_object_codes():
     for control_section_num in object_codes:
         for object_code in object_codes[control_section_num]:
-            print '%d %c %08X %08X' % (control_section_num, object_code.type, object_code.address, object_code.code)
-
-    pass
+            pass
 
 
 initialize()
