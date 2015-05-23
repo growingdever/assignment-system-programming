@@ -5,6 +5,9 @@ from Symbol import *
 from ObjectCode import *
 
 SIZE_OF_WORD = 3
+PATH_INSTRUCTION_DATA = 'inst.data'
+PATH_INPUT_SOURCE = 'program_in.txt'
+PATH_OUTPUT = 'output'
 
 instruction_table = dict()
 input_source_lines = []
@@ -14,7 +17,7 @@ object_codes = dict()
 
 
 def read_instruction_table():
-    with open('inst.data', 'r') as f:
+    with open(PATH_INSTRUCTION_DATA , 'r') as f:
         for line in f:
             tokens = line.split(' ')
             tokens[3] = tokens[3][:len(tokens[3]) - 1]
@@ -26,7 +29,7 @@ def get_opcode_by_mnemonic(mnemonic):
 
 
 def read_input_program():
-    with open('program_in.txt', 'r') as f:
+    with open(PATH_INPUT_SOURCE, 'r') as f:
         for line in f:
             input_source_lines.append(line[:len(line) - 1])
 
@@ -452,7 +455,7 @@ def print_object_codes():
     print('')
     print('')
 
-    with open('output', 'w') as f:
+    with open(PATH_OUTPUT, 'w') as f:
         for control_section_num in object_codes:
             control_section = object_codes[control_section_num]
             header = [object_code for object_code in control_section if object_code.type == 'H']
