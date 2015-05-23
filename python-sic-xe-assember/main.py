@@ -1,3 +1,4 @@
+from __future__ import print_function
 import re
 from SourceToken import *
 from Symbol import *
@@ -224,14 +225,14 @@ def pass1():
     add_all_symbols()
 
     for token in source_tokens:
-        print '%7s %-7s ' % (token.label, token.operator),
-        print ",".join(token.operands)
+        print('%7s %-7s ' % (token.label, token.operator), end='')
+        print(",".join(token.operands))
 
-    print ''
-    print ''
+    print('')
+    print('')
 
     for symbol in symbol_table:
-        print '%8s %08X %d' % (symbol.symbol, symbol.address, symbol.control_section_number)
+        print('%8s %08X %d' % (symbol.symbol, symbol.address, symbol.control_section_number))
 
 
 def calculate_object_code_byte(token):
@@ -365,8 +366,8 @@ def pass2():
     control_section_number = 0
     location_counter = 0
 
-    print ''
-    print ''
+    print('')
+    print('')
 
     for token in source_tokens:
         if token.operator == 'START' or token.operator == 'CSECT':
@@ -406,9 +407,9 @@ def pass2():
 
         object_code_tuple = calculate_object_code(token, location_counter, control_section_number)
         if object_code_tuple[0] == -1:
-            print '%8s %8s' % (token.label, token.operator)
+            print('%8s %8s' % (token.label, token.operator))
         else:
-            print '%8s %8s %08X' % (token.label, token.operator, object_code_tuple[1])
+            print('%8s %8s %08X' % (token.label, token.operator, object_code_tuple[1]))
 
             type = 'T'
             if token.generated_by_ltorg and token.label and token.label[0] == '=':
@@ -448,9 +449,92 @@ def pass2():
 
 
 def print_object_codes():
-    for control_section_num in object_codes:
-        for object_code in object_codes[control_section_num]:
-            pass
+    print('')
+    print('')
+
+    with open('output', 'w') as f:
+        for control_section_num in object_codes:
+            control_section = object_codes[control_section_num]
+            header = [object_code for object_code in control_section if object_code.type == 'H']
+            external_defines = [object_code for object_code in control_section if object_code.type == 'D']
+            external_references = [object_code for object_code in control_section if object_code.type == 'R']
+            texts = [object_code for object_code in control_section if object_code.type == 'T']
+            literals = [object_code for object_code in control_section if object_code.type == 'L']
+            modifications = [object_code for object_code in control_section if object_code.type == 'M']
+            end_row = [object_code for object_code in control_section if object_code.type == 'E']
+
+            print('H%-6s%06X%06X' % (header[0].symbol, header[0].address, end_row[0].address - header[0].address), file=f)
+
+            if len(external_defines) > 0:
+                line = 'D'
+                for object_code in external_defines:
+                    line += '%-6s%06X' % (object_code.symbol, object_code.address)
+                print(line, file=f)
+
+            if len(external_references) > 0:
+                line = 'R'
+                for object_code in external_references:
+                    line += '%-6s' % object_code.symbol
+                print(line, file=f)
+
+            length = 0
+            text_record = ''
+            start_address = texts[0].address
+            for i in xrange(0, len(texts)):
+                object_code = texts[i]
+
+                expr = '%%0%dX' % (object_code.size * 2)
+                length += object_code.size * 2
+                text_record += expr % object_code.code
+
+                if i < len(texts) - 1 and length + texts[i+1].size * 2 >= 0x1E * 2:
+                    print('%c%06X%02X%s' % ('T', start_address, len(text_record) / 2, text_record), file=f)
+                    text_record = ''
+                    length = 0
+                    start_address = texts[i+1].address
+
+            if len(text_record) > 0:
+                print('%c%06X%02X%s' % ('T', start_address, len(text_record) / 2, text_record), file=f)
+
+            if len(literals) > 0:
+                length = 0
+                text_record = ''
+                start_address = literals[0].address
+
+                for i in xrange(0, len(literals)):
+                    object_code = literals[i]
+
+                    expr = '%%0%dX' % (object_code.size * 2)
+                    length += object_code.size * 2
+                    text_record += expr % object_code.code
+
+                    if i < len(literals) - 1 and length + literals[i+1].size * 2 >= 0x1E * 2:
+                        print('%c%06X%02X%s' % ('T', start_address, len(text_record) / 2, text_record), file=f)
+                        text_record = ''
+                        length = 0
+                        start_address = literals[i+1].address
+
+                if len(text_record) > 0:
+                    print('%c%06X%02X%s' % ('T', start_address, len(text_record) / 2, text_record), file=f)
+
+            for object_code in modifications:
+                if object_code.size == 4:
+                    offset = 5
+                else:
+                    offset = 6
+
+                symbol = object_code.symbol
+                if symbol[0] != '-' and symbol[0] != '+':
+                    symbol = '+' + symbol[0:]
+
+                print('M%06X%02X%-7s' % (object_code.address, offset, symbol), file=f)
+
+            if control_section_num == 1:
+                print('E%06X' % 0, file=f)
+            else:
+                print('E', file=f)
+
+            print('', file=f)
 
 
 initialize()
