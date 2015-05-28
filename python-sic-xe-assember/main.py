@@ -17,7 +17,7 @@ object_codes = dict()
 
 
 def read_instruction_table():
-    with open(PATH_INSTRUCTION_DATA , 'r') as f:
+    with open(PATH_INSTRUCTION_DATA, 'r') as f:
         for line in f:
             tokens = line.split(' ')
             tokens[3] = tokens[3][:len(tokens[3]) - 1]
@@ -182,7 +182,7 @@ def increase_location_counter_by_token(token):
         return 4
 
     if token.operator not in instruction_table:
-        return 0;
+        return 0
 
     instruction_data = instruction_table[token.operator]
     for i in xrange(1, 4):
