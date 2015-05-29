@@ -1,5 +1,3 @@
-package forms;
-
 import javax.swing.*;
 
 /**
@@ -8,6 +6,10 @@ import javax.swing.*;
 public class FirstForm extends JFrame {
     private JPanel rootPanel;
     private JList listAssemblies;
+    private JLabel labelRegisterA;
+    private JPanel panelRegisterA;
+    private JLabel labelRegisterAValue;
+    private JPanel panelRegisterX;
 
     String[] assemblies;
 
