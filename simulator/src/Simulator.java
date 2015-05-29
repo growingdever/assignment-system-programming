@@ -1,5 +1,3 @@
-import com.sun.javaws.exceptions.JNLParseException;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -13,14 +11,11 @@ import java.util.HashMap;
 public class Simulator extends JFrame {
 
     private JPanel rootPanel;
-    private JList listAssemblies;
-    private JLabel labelRegisterA;
-    private JPanel panelRegisterA;
-    private JLabel labelRegisterAValue;
-    private JPanel panelRegisterX;
+    private JList<String> listAssemblies;
 
-    final String[] registerNames = { "A", "X", "L", "PC", "SW", "B", "S", "T", "F" };
+    final String[] registerNames = {"A", "X", "L", "PC", "SW", "B", "S", "T", "F"};
     HashMap<String, Integer> registerValueMap;
+
     private boolean isEnd;
 
 
@@ -31,12 +26,12 @@ public class Simulator extends JFrame {
 
     public Simulator() {
         super("FirstForm");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         isEnd = false;
 
         registerValueMap = new HashMap<>();
-        for(String registerName : registerNames) {
+        for (String registerName : registerNames) {
             registerValueMap.put(registerName, 0);
         }
 
@@ -51,6 +46,12 @@ public class Simulator extends JFrame {
         rootPanel.setLayout(new BorderLayout());
         setContentPane(rootPanel);
 
+        addAssemblyList();
+        addControlButtons();
+        addRegisterValueLabels();
+    }
+
+    private void addAssemblyList() {
         String[] assemblies = new String[]{
                 "abc",
                 "abc",
@@ -59,17 +60,13 @@ public class Simulator extends JFrame {
                 "abc",
         };
         DefaultListModel<String> model = new DefaultListModel<>();
-        for(String str : assemblies) {
+        for (String str : assemblies) {
             model.addElement(str);
         }
 
-        addControlButtons();
-
-        listAssemblies = new JList(model);
+        listAssemblies = new JList<>(model);
         listAssemblies.setPreferredSize(new Dimension(200, 400));
         rootPanel.add(listAssemblies, BorderLayout.LINE_START);
-
-        addRegisterValueLabels();
     }
 
     private void addControlButtons() {
@@ -90,7 +87,7 @@ public class Simulator extends JFrame {
         buttonStepAll.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                while(!isEnd) {
+                while (!isEnd) {
                     buttonStepOnce.doClick();
                 }
             }
@@ -104,7 +101,7 @@ public class Simulator extends JFrame {
         panelRegisterValues.setBorder(new EmptyBorder(10, 10, 10, 10));
         rootPanel.add(panelRegisterValues, BorderLayout.CENTER);
 
-        for(String registerName : registerNames) {
+        for (String registerName : registerNames) {
             panelRegisterValues.add(new JLabelRegisterValue(registerName));
         }
     }
@@ -112,5 +109,4 @@ public class Simulator extends JFrame {
     void run() {
 
     }
-
 }
