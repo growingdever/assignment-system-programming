@@ -18,6 +18,7 @@ public class Main {
 
         guiSimulator.setVirtualMachine(virtualMachine);
         guiSimulator.setCodeSimulator(codeSimulator);
+        guiSimulator.setObjectCodeLoader(objectCodeLoader);
 
         codeSimulator.setVirtualMachine(virtualMachine);
         codeSimulator.setGuiSimulator(guiSimulator);
@@ -26,6 +27,6 @@ public class Main {
         objectCodeLoader.setCodeSimulator(codeSimulator);
 
 
-        objectCodeLoader.load(new File("program_copy"));
+//        objectCodeLoader.load(new File("program_copy"));
     }
 }

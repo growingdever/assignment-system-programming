@@ -66,7 +66,7 @@ public class VirtualMachine implements ResourceManager {
 
     @Override
     public void affectVisualSimulator() {
-
+        guiSimulator.updateRegisters(this.registers);
     }
 
     public int reserveMemory(int size) {
