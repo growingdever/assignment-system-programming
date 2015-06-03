@@ -12,6 +12,7 @@ public class VirtualMachine implements ResourceManager {
     private int[] registers;
     private byte[] memory;
     private int lastMemoryAddress;
+    private String programName;
 
 
     public VirtualMachine() {
@@ -23,6 +24,7 @@ public class VirtualMachine implements ResourceManager {
     public void initializeMemory() {
         registers = new int[16];
         memory = new byte[2 << 15];
+        lastMemoryAddress = 0;
     }
 
     @Override
@@ -67,6 +69,7 @@ public class VirtualMachine implements ResourceManager {
     @Override
     public void affectVisualSimulator() {
         guiSimulator.updateRegisters(this.registers);
+        guiSimulator.updateProgramInformation(programName, lastMemoryAddress);
     }
 
     public int reserveMemory(int size) {
@@ -86,5 +89,9 @@ public class VirtualMachine implements ResourceManager {
 
     public void setObjectCodeLoader(ObjectCodeLoader objectCodeLoader) {
         this.objectCodeLoader = objectCodeLoader;
+    }
+
+    public void setProgramName(String programName) {
+        this.programName = programName;
     }
 }

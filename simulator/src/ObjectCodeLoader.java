@@ -1,6 +1,7 @@
 import interfaces.ResourceManager;
 import interfaces.SicLoader;
 import interfaces.SicSimulator;
+import interfaces.VisualSimulator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,6 +41,8 @@ public class ObjectCodeLoader implements SicLoader {
             return;
         }
 
+        currSectionName = "";
+
         while(scanner.hasNextLine()) {
             String line = scanner.nextLine();
             readLine(line);
@@ -62,6 +65,8 @@ public class ObjectCodeLoader implements SicLoader {
             System.out.print(digitToHex(c1));
             System.out.print(digitToHex(c2));
         }
+
+        virtualMachine.affectVisualSimulator();
     }
 
     @Override
@@ -86,6 +91,7 @@ public class ObjectCodeLoader implements SicLoader {
     }
 
     void handleHeader(String line) {
+        boolean isProgramName = currSectionName.equals("");
         currSectionName = line.substring(0, 6).replace(" ", "");
         int sectionSize = Integer.parseInt(line.substring(13), 16);
 
@@ -93,6 +99,10 @@ public class ObjectCodeLoader implements SicLoader {
         linkingOperations.put(currSectionName, new ArrayList<>());
 
         symbolTable.put(currSectionName, currSectionStartAddress);
+
+        if( isProgramName ) {
+            virtualMachine.setProgramName(currSectionName);
+        }
     }
 
     void handleExternalDefine(String line) {

@@ -18,6 +18,9 @@ public class GUISimulator extends JFrame implements VisualSimulator {
     private JPanel rootPanel;
     private JList<String> listAssemblies;
 
+    private JLabel labelProgramName;
+    private JLabel labelProgramLength;
+
     private JLabelRegisterValue labelRegisterA;
     private JLabelRegisterValue labelRegisterX;
     private JLabelRegisterValue labelRegisterL;
@@ -37,6 +40,7 @@ public class GUISimulator extends JFrame implements VisualSimulator {
 
         addAssemblyList();
         addControlButtons();
+        addProgramInfomations();
         addRegisterValueLabels();
     }
 
@@ -55,7 +59,7 @@ public class GUISimulator extends JFrame implements VisualSimulator {
 
         listAssemblies = new JList<>(model);
         listAssemblies.setPreferredSize(new Dimension(200, 400));
-        rootPanel.add(listAssemblies, BorderLayout.LINE_START);
+        rootPanel.add(listAssemblies, BorderLayout.CENTER);
     }
 
     private void addControlButtons() {
@@ -87,11 +91,26 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         panelControlButtons.add(buttonStepAll);
     }
 
+    private void addProgramInfomations() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        rootPanel.add(panel, BorderLayout.WEST);
+
+        labelProgramName = new JLabel("PROGRAM NAME");
+        labelProgramName.setPreferredSize(new Dimension(150, 20));
+        panel.add(labelProgramName);
+
+        labelProgramLength = new JLabel("PROGRAM LENGTH");
+        labelProgramLength.setPreferredSize(new Dimension(150, 20));
+        panel.add(labelProgramLength);
+    }
+
     private void addRegisterValueLabels() {
         JPanel panelRegisterValues = new JPanel();
         panelRegisterValues.setLayout(new BoxLayout(panelRegisterValues, BoxLayout.PAGE_AXIS));
-        panelRegisterValues.setBorder(new EmptyBorder(10, 10, 10, 10));
-        rootPanel.add(panelRegisterValues, BorderLayout.CENTER);
+        panelRegisterValues.setBorder(new EmptyBorder(20, 20, 20, 20));
+        rootPanel.add(panelRegisterValues, BorderLayout.EAST);
 
         labelRegisterA = new JLabelRegisterValue("A");
         panelRegisterValues.add(labelRegisterA);
@@ -142,6 +161,11 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         labelRegisterL.setValue(registers[2]);
         labelRegisterPC.setValue(registers[8]);
         labelRegisterSW.setValue(registers[9]);
+    }
+
+    public void updateProgramInformation(String programName, int programLength) {
+        labelProgramName.setText(String.format("Name : %s", programName));
+        labelProgramLength.setText(String.format("Length : %s bytes", programLength));
     }
 
 }
