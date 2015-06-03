@@ -1,44 +1,27 @@
+import interfaces.VisualSimulator;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.HashMap;
 
 /**
  * Created by loki on 15. 5. 28..
  */
-public class Simulator extends JFrame {
+public class GUISimulator extends JFrame implements VisualSimulator {
+
+    private VirtualMachine virtualMachine;
+    private CodeSimulator codeSimulator;
 
     private JPanel rootPanel;
     private JList<String> listAssemblies;
 
-    final String[] registerNames = {"A", "X", "L", "PC", "SW", "B", "S", "T", "F"};
     HashMap<String, Integer> registerValueMap;
 
-    private boolean isEnd;
 
-
-    public static void Start() {
-        Simulator simulator = new Simulator();
-        simulator.run();
-    }
-
-    public Simulator() {
-        super("FirstForm");
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-
-        isEnd = false;
-
-        registerValueMap = new HashMap<>();
-        for (String registerName : registerNames) {
-            registerValueMap.put(registerName, 0);
-        }
-
-        setUpUI();
-        pack();
-
-        setVisible(true);
+    public GUISimulator() {
+        super("SIC/XE Simulator");
+        initialize();
     }
 
     private void setUpUI() {
@@ -74,23 +57,19 @@ public class Simulator extends JFrame {
         panelControlButtons.setLayout(new BoxLayout(panelControlButtons, BoxLayout.LINE_AXIS));
         rootPanel.add(panelControlButtons, BorderLayout.PAGE_START);
 
+        JButton buttonLoadProgram = new JButton("LoadProgram");
+        buttonLoadProgram.addActionListener(e -> {
+        });
+
         JButton buttonStepOnce = new JButton("Step");
-        buttonStepOnce.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                //TODO : Perform next instruction
-            }
+        buttonStepOnce.addActionListener(e -> {
+            oneStep();
         });
         panelControlButtons.add(buttonStepOnce);
 
         JButton buttonStepAll = new JButton("Step All");
-        buttonStepAll.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                while (!isEnd) {
-                    buttonStepOnce.doClick();
-                }
-            }
+        buttonStepAll.addActionListener(e -> {
+            allStep();
         });
         panelControlButtons.add(buttonStepAll);
     }
@@ -101,12 +80,37 @@ public class Simulator extends JFrame {
         panelRegisterValues.setBorder(new EmptyBorder(10, 10, 10, 10));
         rootPanel.add(panelRegisterValues, BorderLayout.CENTER);
 
-        for (String registerName : registerNames) {
+        for (String registerName : new String[]{"abc", "def", "abc"}) {
             panelRegisterValues.add(new JLabelRegisterValue(registerName));
         }
     }
 
-    void run() {
+    @Override
+    public void initialize() {
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
+        registerValueMap = new HashMap<>();
+
+        setUpUI();
+        pack();
+
+        setVisible(true);
+    }
+
+    @Override
+    public void oneStep() {
+
+    }
+
+    @Override
+    public void allStep() {
+    }
+
+    public void setVirtualMachine(VirtualMachine virtualMachine) {
+        this.virtualMachine = virtualMachine;
+    }
+
+    public void setCodeSimulator(CodeSimulator codeSimulator) {
+        this.codeSimulator = codeSimulator;
     }
 }
