@@ -62,8 +62,8 @@ public class ObjectCodeLoader implements SicLoader {
             char c1 = (char) ((bytes[i] & 0x000000F0) >> 4);
             char c2 = (char) (bytes[i] & 0x0000000F);
 
-            System.out.print(digitToHex(c1));
-            System.out.print(digitToHex(c2));
+            System.out.print(Util.digitToHex(c1));
+            System.out.print(Util.digitToHex(c2));
         }
 
         virtualMachine.affectVisualSimulator();
@@ -123,8 +123,8 @@ public class ObjectCodeLoader implements SicLoader {
         byte[] bytes = new byte[hexes.length() / 2];
         for( int i = 0; i < hexes.length(); i += 2 ) {
             byte b = 0;
-            char c1 = hexToDigit(hexes.charAt(i));
-            char c2 = hexToDigit(hexes.charAt(i + 1));
+            char c1 = Util.hexToDigit(hexes.charAt(i));
+            char c2 = Util.hexToDigit(hexes.charAt(i + 1));
 
             b += c1 << 4;
             b += c2;
@@ -132,27 +132,6 @@ public class ObjectCodeLoader implements SicLoader {
         }
 
         virtualMachine.setMemory(currSectionStartAddress + startAddress, bytes, bytes.length);
-    }
-
-    char hexToDigit(char c) {
-        if( c >= '0' && c <= '9' ) {
-            c -= '0';
-        } else {
-            c -= 'A';
-            c += 10;
-        }
-
-        return c;
-    }
-
-    char digitToHex(char c) {
-        if( c <= 9 ) {
-            c += '0';
-        } else {
-            c += 'A' - 10;
-        }
-
-        return c;
     }
 
     void handleModification(String line) {

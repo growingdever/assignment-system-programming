@@ -2,6 +2,9 @@ import interfaces.VisualSimulator;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
 import java.awt.*;
 import java.io.File;
 import java.util.HashMap;
@@ -27,6 +30,8 @@ public class GUISimulator extends JFrame implements VisualSimulator {
     private JLabelRegisterValue labelRegisterPC;
     private JLabelRegisterValue labelRegisterSW;
 
+    private JTextArea textAreaMemoryDump;
+
 
     public GUISimulator() {
         super("SIC/XE Simulator");
@@ -42,6 +47,7 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         addControlButtons();
         addProgramInfomations();
         addRegisterValueLabels();
+        addMemoryDumps();
     }
 
     private void addAssemblyList() {
@@ -124,6 +130,18 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         panelRegisterValues.add(labelRegisterSW);
     }
 
+    private void addMemoryDumps() {
+        textAreaMemoryDump = new JTextArea();
+        textAreaMemoryDump.setAutoscrolls(true);
+        textAreaMemoryDump.setFont(new Font("Courier", Font.TRUETYPE_FONT, 14));
+        textAreaMemoryDump.setEditable(false);
+
+        JScrollPane scrollPane = new JScrollPane(textAreaMemoryDump);
+        scrollPane.setPreferredSize(new Dimension(400, 300));
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        rootPanel.add(scrollPane, BorderLayout.SOUTH);
+    }
+
     @Override
     public void initialize() {
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -166,6 +184,37 @@ public class GUISimulator extends JFrame implements VisualSimulator {
     public void updateProgramInformation(String programName, int programLength) {
         labelProgramName.setText(String.format("Name : %s", programName));
         labelProgramLength.setText(String.format("Length : %s bytes", programLength));
+    }
+
+    public void updateMemoryDump() {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        byte[] bytes = virtualMachine.getMemory(0, 8192);
+        for(int i = 0; i < bytes.length; i ++) {
+            if( i % 4 == 0 && i > 0 ) {
+                stringBuilder.append(" ");
+            }
+            if( i % 16 == 0 && i > 0 ) {
+                stringBuilder.append("\n");
+            }
+
+            char c1 = (char) ((bytes[i] & 0x000000F0) >> 4);
+            char c2 = (char) (bytes[i] & 0x0000000F);
+
+            stringBuilder.append(Util.digitToHex(c1));
+            stringBuilder.append(Util.digitToHex(c2));
+        }
+
+        textAreaMemoryDump.setText(stringBuilder.toString());
+        textAreaMemoryDump.setCaretPosition(0);
+
+        Highlighter highlighter = textAreaMemoryDump.getHighlighter();
+        highlighter.removeAllHighlights();
+        try {
+            highlighter.addHighlight(0, 3, DefaultHighlighter.DefaultPainter);
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+        }
     }
 
 }

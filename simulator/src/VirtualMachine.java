@@ -61,6 +61,10 @@ public class VirtualMachine implements ResourceManager {
         return ret;
     }
 
+    public byte[] getMemory() {
+        return memory;
+    }
+
     @Override
     public int getRegister(int regNum) {
         return registers[regNum];
@@ -70,6 +74,7 @@ public class VirtualMachine implements ResourceManager {
     public void affectVisualSimulator() {
         guiSimulator.updateRegisters(this.registers);
         guiSimulator.updateProgramInformation(programName, lastMemoryAddress);
+        guiSimulator.updateMemoryDump();
     }
 
     public int reserveMemory(int size) {
