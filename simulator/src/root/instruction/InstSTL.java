@@ -1,6 +1,6 @@
-package instruction;
+package root.instruction;
 
-import root.SICXEInstruction;
+import root.Constants;
 import root.VirtualMachine;
 
 /**
@@ -13,6 +13,9 @@ public class InstSTL extends SICXEInstruction {
 
     @Override
     public void Execute(VirtualMachine virtualMachine) {
-
+        int address = getDestAddress(virtualMachine);
+        int regValueL = virtualMachine.getRegister(Constants.REGISTER_L);
+        int size = isExtended ? 4 : 3;
+        virtualMachine.setMemory(address, getByteFromRegisterValue(regValueL), size);
     }
 }

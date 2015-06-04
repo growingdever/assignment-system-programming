@@ -16,6 +16,7 @@ public class JLabelRegisterValue extends JLabel {
 
         this.setPreferredSize(new Dimension(120, 30));
         this.setHorizontalAlignment(SwingConstants.LEFT);
+        this.setFont(new Font("Courier", Font.TRUETYPE_FONT, 14));
 
         this.registerName = name;
         this.setValue(0);

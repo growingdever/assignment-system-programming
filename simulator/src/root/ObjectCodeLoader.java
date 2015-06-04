@@ -48,6 +48,8 @@ public class ObjectCodeLoader implements SicLoader {
 
         linking();
 
+        int size = codeSimulator.calculateInstructionSize(0);
+        virtualMachine.setCurrInstructionSize(size);
         virtualMachine.affectVisualSimulator();
     }
 

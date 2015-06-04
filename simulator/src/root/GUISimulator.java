@@ -183,8 +183,7 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         labelRegisterA.setValue(registers[Constants.REGISTER_A]);
         labelRegisterX.setValue(registers[Constants.REGISTER_X]);
         labelRegisterL.setValue(registers[Constants.REGISTER_L]);
-        labelRegisterPC.setValue(registers[Constants.REGISTER_PC]
-                + codeSimulator.calculateInstructionSize(registers[Constants.REGISTER_PC]));
+        labelRegisterPC.setValue(registers[Constants.REGISTER_PC]);
         labelRegisterSW.setValue(registers[Constants.REGISTER_SW]);
     }
 
@@ -217,11 +216,12 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         Highlighter highlighter = textAreaMemoryDump.getHighlighter();
         highlighter.removeAllHighlights();
         try {
-            int end = (virtualMachine.getRegisterPC() + codeSimulator.calculateInstructionSize(virtualMachine.getRegisterPC())) * 2;
+            int start = virtualMachine.getRegisterPC() * 2;
+            int end = (virtualMachine.getRegisterPC() + virtualMachine.getCurrInstructionSize()) * 2;
+            start += start / 8;
             end += end / 8;
 
-            int start = virtualMachine.getRegisterPC() * 2;
-            start += start / 8;
+            System.out.println(start + " " + end);
 
             highlighter.addHighlight(start,
                     end,

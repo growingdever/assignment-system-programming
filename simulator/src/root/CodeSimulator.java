@@ -1,9 +1,6 @@
 package root;
 
-import instruction.InstSTL;
-import root.instruction.InstJSUB;
-import root.instruction.InstructionData;
-import root.instruction.InstructionTable;
+import root.instruction.*;
 import root.interfaces.SicSimulator;
 
 /**
@@ -38,10 +35,10 @@ public class CodeSimulator implements SicSimulator {
 
         int opcode = getOpCode(location);
         InstructionData inst = instructionTable.FindInstructionDataByOpCode(opcode);
-        if( inst.IsValidFormat(2) ) {
+        if (inst.IsValidFormat(2)) {
             return 2;
         } else {
-            if( isExtended ) {
+            if (isExtended) {
                 return 4;
             }
             return 3;
@@ -70,7 +67,7 @@ public class CodeSimulator implements SicSimulator {
         byte[] wholeBytes = virtualMachine.getMemory(virtualMachine.getRegisterPC(), virtualMachine.getCurrInstructionSize());
 
         SICXEInstruction instruction = null;
-        switch(opcode) {
+        switch (opcode) {
             case 0x14:
                 instruction = new InstSTL(wholeBytes, isExtended);
                 break;
@@ -79,12 +76,9 @@ public class CodeSimulator implements SicSimulator {
                 break;
         }
 
-        if( instruction != null ) {
+        if (instruction != null) {
+            virtualMachine.moveToNextPC();
             instruction.Execute(virtualMachine);
-
-            if( opcode != 0x48 ) {
-                virtualMachine.moveToNextPC();
-            }
         }
 
         virtualMachine.affectVisualSimulator();
