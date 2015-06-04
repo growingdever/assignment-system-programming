@@ -3,16 +3,15 @@ package root.instruction;
 import root.Constants;
 import root.VirtualMachine;
 
-import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Scanner;
 
 /**
  * Created by loki on 15. 6. 4..
  */
-public class InstRD extends SICXEInstruction {
-    public InstRD(byte[] bytes, boolean e) {
+public class InstWD extends SICXEInstruction {
+    public InstWD(byte[] bytes, boolean e) {
         super(bytes, e);
     }
 
@@ -25,14 +24,10 @@ public class InstRD extends SICXEInstruction {
         VirtualMachine.VirtualDevice device = virtualMachine.getDevice(deviceName);
 
         if(virtualMachine.getRegister(Constants.REGISTER_SW) == '<') {
-            FileInputStream fileInputStream = device.getFileInputStream();
+            FileOutputStream fileOutputStream = device.getFileOutputStream();
             try {
-                int b = fileInputStream.read();
-                if( b == -1 ){
-                    virtualMachine.setRegister(Constants.REGISTER_A, 0);
-                } else {
-                    virtualMachine.setRegister(Constants.REGISTER_A, b);
-                }
+                int b = virtualMachine.getRegister(Constants.REGISTER_A);
+                fileOutputStream.write(b);
             } catch (IOException e) {
                 e.printStackTrace();
             }

@@ -1,6 +1,7 @@
 package root.instruction;
 
 import root.Constants;
+import root.Util;
 import root.VirtualMachine;
 
 /**
@@ -15,12 +16,29 @@ public abstract class SICXEInstruction {
         isExtended = e;
     }
 
-    public int getDisplacement() {
-        int disp = 0;
-        disp += (bytes[1] & 0xF) << 8;
-        disp += (bytes[2] & 0xFF);
+    public boolean isIndirect() {
+        return (bytes[0] & 0x2) > 0;
+    }
 
-        return disp;
+    public boolean isImmediate() {
+        return (bytes[0] & 0x1) > 0;
+    }
+
+    public boolean isSimple() {
+        return !isIndirect() && !isImmediate();
+    }
+
+    public int getDisplacement() {
+        char c1 = (char) (bytes[1] & 0xF);
+        char c2 = (char) ((bytes[2] & 0xF0) >> 4);
+        char c3 = (char) (bytes[2] & 0x0F);
+
+        c1 = Util.digitToHex(c1);
+        c2 = Util.digitToHex(c2);
+        c3 = Util.digitToHex(c3);
+        String str = "" + c1 + c2 + c3;
+
+        return Util.twosComp(str, 12);
     }
 
     public byte[] getByteFromRegisterValue(int regValue) {
@@ -49,12 +67,20 @@ public abstract class SICXEInstruction {
         return v;
     }
 
-    public int getRegisterValue1() {
+    public int getRegisterNumber1() {
         return (bytes[1] & 0x000000F0) >> 4;
     }
 
-    public int getRegisterValue2() {
-        return bytes[1] & 0x0000000F;
+    public int getRegisterNumber2() {
+        return (bytes[1] & 0x0000000F);
+    }
+
+    public int getRegisterValue1(VirtualMachine virtualMachine) {
+        return virtualMachine.getRegister(getRegisterNumber1());
+    }
+
+    public int getRegisterValue2(VirtualMachine virtualMachine) {
+        return virtualMachine.getRegister(getRegisterNumber2());
     }
 
     public int getDestAddress(VirtualMachine virtualMachine) {

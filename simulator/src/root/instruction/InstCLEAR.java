@@ -13,8 +13,7 @@ public class InstCLEAR extends SICXEInstruction {
 
     @Override
     public void Execute(VirtualMachine virtualMachine) {
-        int r = getRegisterValue1();
-        int r2 = getRegisterValue2();
+        int r = getRegisterNumber1();
         virtualMachine.setRegister(r, 0);
     }
 }

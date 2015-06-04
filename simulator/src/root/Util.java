@@ -24,4 +24,11 @@ public class Util {
 
         return c;
     }
+
+    public static int twosComp(String str, int pow) {
+        Integer num = Integer.valueOf(str, 16);
+        int max = (int) Math.pow(2, pow);
+        int mid = max / 2 - 1;
+        return (num > mid) ? num - max : num;
+    }
 }

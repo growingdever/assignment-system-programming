@@ -73,14 +73,44 @@ public class CodeSimulator implements SicSimulator {
             case 0x14:
                 instruction = new InstSTL(wholeBytes, isExtended);
                 break;
+            case 0x30:
+                instruction = new InstJEQ(wholeBytes, isExtended);
+                break;
+            case 0x38:
+                instruction = new InstJLT(wholeBytes, isExtended);
+                break;
             case 0x48:
                 instruction = new InstJSUB(wholeBytes, isExtended);
+                break;
+            case 0x4C:
+                instruction = new InstRSUB(wholeBytes, isExtended);
                 break;
             case 0xB4:
                 instruction = new InstCLEAR(wholeBytes, isExtended);
                 break;
+            case 0x28:
+                instruction = new InstCOMP(wholeBytes, isExtended);
+                break;
+            case 0xA0:
+                instruction = new InstCOMPR(wholeBytes, isExtended);
+                break;
+            case 0xB8:
+                instruction = new InstTIXR(wholeBytes, isExtended);
+                break;
+            case 0x00:
+                instruction = new InstLDA(wholeBytes, isExtended);
+                break;
             case 0x74:
                 instruction = new InstLDT(wholeBytes, isExtended);
+                break;
+            case 0x54:
+                instruction = new InstSTCH(wholeBytes, isExtended);
+                break;
+            case 0x50:
+                instruction = new InstLDCH(wholeBytes, isExtended);
+                break;
+            case 0x10:
+                instruction = new InstSTX(wholeBytes, isExtended);
                 break;
             case 0xE0:
                 instruction = new InstTD(wholeBytes, isExtended);
@@ -88,11 +118,13 @@ public class CodeSimulator implements SicSimulator {
             case 0xD8:
                 instruction = new InstRD(wholeBytes, isExtended);
                 break;
+            case 0xDC:
+                instruction = new InstWD(wholeBytes, isExtended);
+                break;
         }
 
-        virtualMachine.moveToNextPC();
         if (instruction != null) {
-
+            virtualMachine.moveToNextPC();
             instruction.Execute(virtualMachine);
         }
 
