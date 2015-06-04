@@ -1,6 +1,7 @@
 package root;
 
 import instruction.InstCLEAR;
+import instruction.InstLDT;
 import root.instruction.*;
 import root.interfaces.SicSimulator;
 
@@ -77,6 +78,9 @@ public class CodeSimulator implements SicSimulator {
                 break;
             case 0xB4:
                 instruction = new InstCLEAR(wholeBytes, isExtended);
+                break;
+            case 0x74:
+                instruction = new InstLDT(wholeBytes, isExtended);
                 break;
         }
 

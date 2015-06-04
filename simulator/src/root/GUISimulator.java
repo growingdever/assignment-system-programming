@@ -31,6 +31,10 @@ public class GUISimulator extends JFrame implements VisualSimulator {
     private JLabelRegisterValue labelRegisterL;
     private JLabelRegisterValue labelRegisterPC;
     private JLabelRegisterValue labelRegisterSW;
+    private JLabelRegisterValue labelRegisterB;
+    private JLabelRegisterValue labelRegisterS;
+    private JLabelRegisterValue labelRegisterT;
+    private JLabelRegisterValue labelRegisterF;
 
     private JTextArea textAreaMemoryDump;
 
@@ -121,6 +125,7 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         panelRegisterValues.setBorder(new EmptyBorder(20, 20, 20, 20));
         rootPanel.add(panelRegisterValues, BorderLayout.EAST);
 
+        // SIC
         labelRegisterA = new JLabelRegisterValue("A");
         panelRegisterValues.add(labelRegisterA);
         labelRegisterX = new JLabelRegisterValue("X");
@@ -131,6 +136,16 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         panelRegisterValues.add(labelRegisterPC);
         labelRegisterSW = new JLabelRegisterValue("SW");
         panelRegisterValues.add(labelRegisterSW);
+
+        // SIC/XE
+        labelRegisterB = new JLabelRegisterValue("B");
+        panelRegisterValues.add(labelRegisterB);
+        labelRegisterS = new JLabelRegisterValue("S");
+        panelRegisterValues.add(labelRegisterS);
+        labelRegisterT = new JLabelRegisterValue("T");
+        panelRegisterValues.add(labelRegisterT);
+        labelRegisterF = new JLabelRegisterValue("F");
+        panelRegisterValues.add(labelRegisterF);
     }
 
     private void addMemoryDumps() {
@@ -185,6 +200,10 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         labelRegisterL.setValue(registers[Constants.REGISTER_L]);
         labelRegisterPC.setValue(registers[Constants.REGISTER_PC]);
         labelRegisterSW.setValue(registers[Constants.REGISTER_SW]);
+        labelRegisterB.setValue(registers[Constants.REGISTER_B]);
+        labelRegisterS.setValue(registers[Constants.REGISTER_S]);
+        labelRegisterT.setValue(registers[Constants.REGISTER_T]);
+        labelRegisterF.setValue(registers[Constants.REGISTER_F]);
     }
 
     public void updateProgramInformation(String programName, int programLength) {

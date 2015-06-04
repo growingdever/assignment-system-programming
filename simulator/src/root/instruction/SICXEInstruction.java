@@ -40,6 +40,15 @@ public abstract class SICXEInstruction {
         return bytes;
     }
 
+    public int bytesToInteger(byte[] input) {
+        int v = 0;
+        for(int i = 0; i < input.length; i ++) {
+            v += input[i] << (8 * i);
+        }
+
+        return v;
+    }
+
     public int getRegisterValue1() {
         return (bytes[1] & 0x000000F0) >> 4;
     }
