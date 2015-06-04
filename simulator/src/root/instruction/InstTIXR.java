@@ -15,6 +15,9 @@ public class InstTIXR extends SICXEInstruction {
     public void Execute(VirtualMachine virtualMachine) {
         int r1 = getRegisterValue1(virtualMachine);
         int x = virtualMachine.getRegister(Constants.REGISTER_X);
+        x ++;
+        virtualMachine.setRegister(Constants.REGISTER_X, x);
+
 
         if( x < r1 ) {
             virtualMachine.setRegister(Constants.REGISTER_SW, '<');
@@ -24,6 +27,6 @@ public class InstTIXR extends SICXEInstruction {
             virtualMachine.setRegister(Constants.REGISTER_SW, '=');
         }
 
-        virtualMachine.setRegister(Constants.REGISTER_X, x + 1);
+
     }
 }

@@ -184,7 +184,7 @@ public class GUISimulator extends JFrame implements VisualSimulator {
 
     @Override
     public void allStep() {
-
+        codeSimulator.allStep();
     }
 
     public void setVirtualMachine(VirtualMachine virtualMachine) {

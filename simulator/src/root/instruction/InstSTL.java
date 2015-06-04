@@ -15,7 +15,6 @@ public class InstSTL extends SICXEInstruction {
     public void Execute(VirtualMachine virtualMachine) {
         int address = getDestAddress(virtualMachine);
         int regValueL = virtualMachine.getRegister(Constants.REGISTER_L);
-        int size = isExtended ? 4 : 3;
-        virtualMachine.setMemory(address, getByteFromRegisterValue(regValueL), size);
+        virtualMachine.setMemory(address, getByteFromRegisterValue(regValueL), 3);
     }
 }

@@ -18,7 +18,7 @@ public class InstTD extends SICXEInstruction {
         int address = getDestAddress(virtualMachine);
         int size = 1;
         int val = bytesToInteger(virtualMachine.getMemory(address, size));
-        String deviceName = Integer.toString(val & 0xFF, 16).toUpperCase();
+        String deviceName = String.format("%02X", val & 0x000000FF);
 
         File file = virtualMachine.getDevice(deviceName).getFile();
         if( file.canWrite() && file.canRead() ) {

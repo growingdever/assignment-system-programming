@@ -14,9 +14,7 @@ public class InstLDT extends SICXEInstruction {
 
     @Override
     public void Execute(VirtualMachine virtualMachine) {
-        int address = getDestAddress(virtualMachine);
-        int size = isExtended ? 4 : 3;
-        int val = bytesToInteger(virtualMachine.getMemory(address, size));
+        int val = getValue(virtualMachine);
         virtualMachine.setRegister(Constants.REGISTER_T, val);
     }
 }

@@ -14,7 +14,18 @@ public class InstLDCH extends SICXEInstruction {
     @Override
     public void Execute(VirtualMachine virtualMachine) {
         int address = getDestAddress(virtualMachine);
-        int value = virtualMachine.getMemory(address, 1)[0];
+        int value = 0;
+
+        if( isSimple() ) {
+            value = virtualMachine.getMemory(address, 1)[0];
+        } else if( isImmediate() ) {
+            value = getDisplacement();
+        } else if( isIndirect() ) {
+            byte[] memory = virtualMachine.getMemory(address, 3);
+            int indirectAddress = bytesToInteger(memory);
+            value = bytesToInteger(virtualMachine.getMemory(indirectAddress, 3));
+        }
+
         virtualMachine.setRegister(Constants.REGISTER_A, value);
     }
 }

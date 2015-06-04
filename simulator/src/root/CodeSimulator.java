@@ -79,6 +79,9 @@ public class CodeSimulator implements SicSimulator {
             case 0x14:
                 instruction = new InstSTL(wholeBytes, isExtended);
                 break;
+            case 0x3C:
+                instruction = new InstJ(wholeBytes, isExtended);
+                break;
             case 0x30:
                 instruction = new InstJEQ(wholeBytes, isExtended);
                 break;
@@ -115,6 +118,9 @@ public class CodeSimulator implements SicSimulator {
             case 0x50:
                 instruction = new InstLDCH(wholeBytes, isExtended);
                 break;
+            case 0x0C:
+                instruction = new InstSTA(wholeBytes, isExtended);
+                break;
             case 0x10:
                 instruction = new InstSTX(wholeBytes, isExtended);
                 break;
@@ -140,7 +146,9 @@ public class CodeSimulator implements SicSimulator {
 
     @Override
     public void allStep() {
-
+        for( int i = 0 ; i < 5; i ++ ) {
+            oneStep();
+        }
     }
 
     @Override

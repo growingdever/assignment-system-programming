@@ -17,11 +17,11 @@ public abstract class SICXEInstruction {
     }
 
     public boolean isIndirect() {
-        return (bytes[0] & 0x2) > 0;
+        return (bytes[0] & 0x2) > 0 && (bytes[0] & 0x1) == 0;
     }
 
     public boolean isImmediate() {
-        return (bytes[0] & 0x1) > 0;
+        return (bytes[0] & 0x2) == 0 && (bytes[0] & 0x1) > 0;
     }
 
     public boolean isSimple() {
@@ -42,18 +42,10 @@ public abstract class SICXEInstruction {
     }
 
     public byte[] getByteFromRegisterValue(int regValue) {
-        int size = isExtended ? 4 : 3;
-        byte[] bytes = new byte[size];
-        if( size == 3 ) {
-            bytes[0] = (byte) (regValue & 0x000000FF);
-            bytes[1] = (byte) (regValue & 0x0000FF00);
-            bytes[2] = (byte) (regValue & 0x00FF0000);
-        } else {
-            bytes[0] = (byte) (regValue & 0x000000FF);
-            bytes[1] = (byte) (regValue & 0x0000FF00);
-            bytes[2] = (byte) (regValue & 0x00FF0000);
-            bytes[3] = (byte) (regValue & 0xFF000000);
-        }
+        byte[] bytes = new byte[3];
+        bytes[0] = (byte) (regValue & 0x000000FF);
+        bytes[1] = (byte) ((regValue & 0x0000FF00) >> 8);
+        bytes[2] = (byte) ((regValue & 0x00FF0000) >> 16);
 
         return bytes;
     }
@@ -111,9 +103,15 @@ public abstract class SICXEInstruction {
     public int getValue(VirtualMachine virtualMachine) {
         if( isImmediate() ) {
             return getDisplacement();
+        } else if( isIndirect() ) {
+            int address = getDestAddress(virtualMachine);
+            byte[] memory = virtualMachine.getMemory(address, 3);
+
+            int indirectAddress = bytesToInteger(memory);
+            return bytesToInteger(virtualMachine.getMemory(indirectAddress, 3));
         } else {
             int address = getDestAddress(virtualMachine);
-            byte[] memory = virtualMachine.getMemory(address, bytes.length);
+            byte[] memory = virtualMachine.getMemory(address, 3);
             return bytesToInteger(memory);
         }
     }
