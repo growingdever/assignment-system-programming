@@ -13,15 +13,7 @@ public class InstCOMP extends SICXEInstruction {
 
     @Override
     public void Execute(VirtualMachine virtualMachine) {
-        int value = 0;
-        if( isImmediate() ) {
-            value = getDisplacement();
-        } else {
-            int address = getDestAddress(virtualMachine);
-            byte[] memory = virtualMachine.getMemory(address, bytes.length);
-            value = bytesToInteger(memory);
-        }
-
+        int value = getValue(virtualMachine);
         int reg = virtualMachine.getRegister(Constants.REGISTER_A);
         if( reg < value ) {
             virtualMachine.setRegister(Constants.REGISTER_SW, '<');

@@ -25,6 +25,7 @@ public class GUISimulator extends JFrame implements VisualSimulator {
 
     private JLabel labelProgramName;
     private JLabel labelProgramLength;
+    private JLabel labelCurrInstruction;
 
     private JLabelRegisterValue labelRegisterA;
     private JLabelRegisterValue labelRegisterX;
@@ -117,6 +118,10 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         labelProgramLength = new JLabel("PROGRAM LENGTH");
         labelProgramLength.setPreferredSize(new Dimension(150, 20));
         panel.add(labelProgramLength);
+
+        labelCurrInstruction = new JLabel("CURRENT INSTRUCTION");
+        labelCurrInstruction.setPreferredSize(new Dimension(150, 20));
+        panel.add(labelCurrInstruction);
     }
 
     private void addRegisterValueLabels() {
@@ -209,6 +214,9 @@ public class GUISimulator extends JFrame implements VisualSimulator {
     public void updateProgramInformation(String programName, int programLength) {
         labelProgramName.setText(String.format("Name : %s", programName));
         labelProgramLength.setText(String.format("Length : %s bytes", programLength));
+        if( codeSimulator.getCurrInstructionData() != null ) {
+            labelCurrInstruction.setText(String.format("Inst : %s", codeSimulator.getCurrInstructionData().GetMnemonic()));
+        }
     }
 
     public void updateMemoryDump() {

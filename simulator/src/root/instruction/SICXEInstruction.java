@@ -108,6 +108,16 @@ public abstract class SICXEInstruction {
         return address;
     }
 
+    public int getValue(VirtualMachine virtualMachine) {
+        if( isImmediate() ) {
+            return getDisplacement();
+        } else {
+            int address = getDestAddress(virtualMachine);
+            byte[] memory = virtualMachine.getMemory(address, bytes.length);
+            return bytesToInteger(memory);
+        }
+    }
+
     public int getSize() {
         return bytes.length;
     }

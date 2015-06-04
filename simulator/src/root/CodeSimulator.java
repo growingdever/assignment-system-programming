@@ -13,6 +13,7 @@ public class CodeSimulator implements SicSimulator {
     private VirtualMachine virtualMachine;
     private GUISimulator guiSimulator;
     private InstructionTable instructionTable;
+    private InstructionData currInstruction;
 
 
     public CodeSimulator() {
@@ -57,6 +58,11 @@ public class CodeSimulator implements SicSimulator {
         byte secondByte = virtualMachine.getMemory(virtualMachine.getRegisterPC() + 1, 1)[0];
         boolean isExtended = (secondByte & 0x10) > 0;
         return isExtended;
+    }
+
+    public InstructionData getCurrInstructionData() {
+        int opcode = getOpCode(virtualMachine.getRegisterPC());
+        return instructionTable.FindInstructionDataByOpCode(opcode);
     }
 
     @Override
@@ -126,6 +132,7 @@ public class CodeSimulator implements SicSimulator {
         if (instruction != null) {
             virtualMachine.moveToNextPC();
             instruction.Execute(virtualMachine);
+            currInstruction = instructionTable.FindInstructionDataByOpCode(opcode);
         }
 
         virtualMachine.affectVisualSimulator();
