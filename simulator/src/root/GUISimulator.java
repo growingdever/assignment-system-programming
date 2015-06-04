@@ -215,10 +215,10 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         StringBuilder stringBuilder = new StringBuilder();
 
         byte[] bytes = virtualMachine.getMemory(0, 8192);
-        for(int i = 0; i < bytes.length; i ++) {
-            if( i % 16 == 0 && i > 0 ) {
+        for (int i = 0; i < bytes.length; i++) {
+            if (i % 16 == 0 && i > 0) {
                 stringBuilder.append("\n");
-            } else if( i % 4 == 0 && i > 0 ) {
+            } else if (i % 4 == 0 && i > 0) {
                 stringBuilder.append(" ");
             }
 
@@ -230,18 +230,17 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         }
 
         textAreaMemoryDump.setText(stringBuilder.toString());
-        textAreaMemoryDump.setCaretPosition(0);
+
+        int start = virtualMachine.getRegisterPC() * 2;
+        int end = (virtualMachine.getRegisterPC() + codeSimulator.calculateInstructionSize(virtualMachine.getRegisterPC())) * 2;
+        start += start / 8;
+        end += end / 8;
+
+        textAreaMemoryDump.setCaretPosition(start);
 
         Highlighter highlighter = textAreaMemoryDump.getHighlighter();
         highlighter.removeAllHighlights();
         try {
-            int start = virtualMachine.getRegisterPC() * 2;
-            int end = (virtualMachine.getRegisterPC() + codeSimulator.calculateInstructionSize(virtualMachine.getRegisterPC())) * 2;
-            start += start / 8;
-            end += end / 8;
-
-            System.out.println(start + " " + end);
-
             highlighter.addHighlight(start,
                     end,
                     DefaultHighlighter.DefaultPainter);
