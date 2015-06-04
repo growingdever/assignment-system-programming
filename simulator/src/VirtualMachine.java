@@ -13,6 +13,8 @@ public class VirtualMachine implements ResourceManager {
     private byte[] memory;
     private int lastMemoryAddress;
     private String programName;
+    private int currMemoryIndex;
+    private int currInstructionSize;
 
 
     public VirtualMachine() {
@@ -98,5 +100,23 @@ public class VirtualMachine implements ResourceManager {
 
     public void setProgramName(String programName) {
         this.programName = programName;
+    }
+
+    public int getCurrMemoryIndex() {
+        return currMemoryIndex;
+    }
+
+    public void setCurrMemoryIndex(int currMemoryIndex) {
+        this.currMemoryIndex = currMemoryIndex;
+        registers[8] = currMemoryIndex + currInstructionSize;
+    }
+
+    public int getCurrInstructionSize() {
+        return currInstructionSize;
+    }
+
+    public void setCurrInstructionSize(int currInstructionSize) {
+        this.currInstructionSize = currInstructionSize;
+        registers[8] = currMemoryIndex + currInstructionSize;
     }
 }

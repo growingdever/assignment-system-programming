@@ -27,6 +27,6 @@ public class Main {
         objectCodeLoader.setCodeSimulator(codeSimulator);
 
 
-//        objectCodeLoader.load(new File("program_copy"));
+        objectCodeLoader.load(new File("program_copy"));
     }
 }

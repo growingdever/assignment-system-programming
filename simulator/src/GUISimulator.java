@@ -80,6 +80,7 @@ public class GUISimulator extends JFrame implements VisualSimulator {
                 String filename = fileChooser.getSelectedFile().getName();
                 String dir = fileChooser.getCurrentDirectory().toString();
                 objectCodeLoader.load(new File(dir + "/" + filename));
+                codeSimulator.initialize();
             }
         });
         panelControlButtons.add(buttonLoadProgram);
@@ -154,11 +155,12 @@ public class GUISimulator extends JFrame implements VisualSimulator {
 
     @Override
     public void oneStep() {
-
+        codeSimulator.oneStep();
     }
 
     @Override
     public void allStep() {
+
     }
 
     public void setVirtualMachine(VirtualMachine virtualMachine) {
@@ -191,11 +193,10 @@ public class GUISimulator extends JFrame implements VisualSimulator {
 
         byte[] bytes = virtualMachine.getMemory(0, 8192);
         for(int i = 0; i < bytes.length; i ++) {
-            if( i % 4 == 0 && i > 0 ) {
-                stringBuilder.append(" ");
-            }
             if( i % 16 == 0 && i > 0 ) {
                 stringBuilder.append("\n");
+            } else if( i % 4 == 0 && i > 0 ) {
+                stringBuilder.append(" ");
             }
 
             char c1 = (char) ((bytes[i] & 0x000000F0) >> 4);
@@ -211,7 +212,13 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         Highlighter highlighter = textAreaMemoryDump.getHighlighter();
         highlighter.removeAllHighlights();
         try {
-            highlighter.addHighlight(0, 3, DefaultHighlighter.DefaultPainter);
+            int start = virtualMachine.getCurrMemoryIndex() * 2;
+            start += start / 8;
+            int end = virtualMachine.getCurrMemoryIndex() * 2 + virtualMachine.getCurrInstructionSize() * 2;
+            end += end / 8;
+            highlighter.addHighlight(start,
+                    end,
+                    DefaultHighlighter.DefaultPainter);
         } catch (BadLocationException e) {
             e.printStackTrace();
         }

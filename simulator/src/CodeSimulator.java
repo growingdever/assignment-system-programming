@@ -13,8 +13,12 @@ public class CodeSimulator implements SicSimulator {
 
     private VirtualMachine virtualMachine;
     private GUISimulator guiSimulator;
+    private InstructionTable instructionTable;
+
 
     public CodeSimulator() {
+        instructionTable = new InstructionTable();
+        instructionTable.LoadInstructionData("inst.data");
     }
 
     public void setVirtualMachine(VirtualMachine virtualMachine) {
@@ -25,29 +29,33 @@ public class CodeSimulator implements SicSimulator {
         this.guiSimulator = guiSimulator;
     }
 
-    private void loadProgram(String path) {
-    }
-
-
-    public void updateRegisterValue(HashMap<String, Integer> registerValueMap) {
-        if( registerValueMap == null ) {
-            return;
-        }
-
-//        registerValueMap.put("A", regA);
-//        registerValueMap.put("X", regX);
-//        registerValueMap.put("L", regL);
-//        registerValueMap.put("PC", regPC);
-//        registerValueMap.put("SW", regSW);
-//        registerValueMap.put("B", regB);
-//        registerValueMap.put("S", regS);
-//        registerValueMap.put("T", regT);
-//        registerValueMap.put("F", regF);
+    public void initialize() {
     }
 
     @Override
     public void oneStep() {
+        // instruction check
+        byte firstByte = virtualMachine.getMemory(virtualMachine.getCurrMemoryIndex(), 1)[0];
+        byte secondByte = virtualMachine.getMemory(virtualMachine.getCurrMemoryIndex() + 1, 1)[0];
+        int opcode = firstByte & 0x000000FC;
+        boolean isExtended = (secondByte & 0x10) > 0;
 
+        InstructionData inst = instructionTable.FindInstructionDataByOpCode(opcode);
+        if( inst.IsValidFormat(2) ) {
+            // format 2
+            virtualMachine.setCurrInstructionSize(2);
+        } else {
+            // format 3 or 4
+            if( isExtended ) {
+                virtualMachine.setCurrInstructionSize(4);
+            } else {
+                virtualMachine.setCurrInstructionSize(3);
+            }
+        }
+
+
+        virtualMachine.affectVisualSimulator();
+        virtualMachine.setCurrMemoryIndex(virtualMachine.getCurrMemoryIndex() + virtualMachine.getCurrInstructionSize());
     }
 
     @Override
@@ -59,5 +67,4 @@ public class CodeSimulator implements SicSimulator {
     public void addLog() {
 
     }
-
 }
