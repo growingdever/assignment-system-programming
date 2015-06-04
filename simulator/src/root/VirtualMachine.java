@@ -2,6 +2,10 @@ package root;
 
 import root.interfaces.ResourceManager;
 
+import java.io.*;
+import java.util.HashMap;
+import java.util.Scanner;
+
 /**
  * Created by loki on 15. 6. 3..
  */
@@ -16,6 +20,7 @@ public class VirtualMachine implements ResourceManager {
     private int lastMemoryAddress;
     private String programName;
     private int currInstructionSize;
+    private HashMap<String, VirtualDevice> devices;
 
 
     public VirtualMachine() {
@@ -28,6 +33,7 @@ public class VirtualMachine implements ResourceManager {
         registers = new int[16];
         memory = new byte[2 << 15];
         lastMemoryAddress = 0;
+        devices = new HashMap<>();
     }
 
     @Override
@@ -39,7 +45,21 @@ public class VirtualMachine implements ResourceManager {
 
     @Override
     public void initialDevice(String devName) {
+        File file = new File(devName);
+        if( ! file.exists() ) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
+        VirtualDevice virtualDevice = new VirtualDevice(file);
+        devices.put(devName, virtualDevice);
+    }
+
+    public VirtualDevice getDevice(String deviceName) {
+        return devices.get(deviceName);
     }
 
     @Override
@@ -143,6 +163,33 @@ public class VirtualMachine implements ResourceManager {
             System.out.print(Util.digitToHex(c1));
             System.out.print(Util.digitToHex(c2));
         }
+    }
 
+    public class VirtualDevice {
+        private File file;
+        private FileInputStream fileInputStream;
+        private FileOutputStream fileOutputStream;
+
+        public VirtualDevice(File file) {
+            this.file = file;
+            try {
+                this.fileInputStream = new FileInputStream(file);
+                this.fileOutputStream = new FileOutputStream(file, true);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public File getFile() {
+            return file;
+        }
+
+        public FileInputStream getFileInputStream() {
+            return fileInputStream;
+        }
+
+        public FileOutputStream getFileOutputStream() {
+            return fileOutputStream;
+        }
     }
 }

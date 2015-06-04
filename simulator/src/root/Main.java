@@ -26,5 +26,8 @@ public class Main {
         objectCodeLoader.setVirtualMachine(virtualMachine);
         objectCodeLoader.setCodeSimulator(codeSimulator);
         objectCodeLoader.load(new File("program_copy"));
+
+        virtualMachine.initialDevice("F1");
+        virtualMachine.initialDevice("05");
     }
 }

@@ -1,7 +1,7 @@
 package root;
 
-import instruction.InstCLEAR;
-import instruction.InstLDT;
+import root.instruction.InstCLEAR;
+import root.instruction.InstLDT;
 import root.instruction.*;
 import root.interfaces.SicSimulator;
 
@@ -82,10 +82,17 @@ public class CodeSimulator implements SicSimulator {
             case 0x74:
                 instruction = new InstLDT(wholeBytes, isExtended);
                 break;
+            case 0xE0:
+                instruction = new InstTD(wholeBytes, isExtended);
+                break;
+            case 0xD8:
+                instruction = new InstRD(wholeBytes, isExtended);
+                break;
         }
 
+        virtualMachine.moveToNextPC();
         if (instruction != null) {
-            virtualMachine.moveToNextPC();
+
             instruction.Execute(virtualMachine);
         }
 

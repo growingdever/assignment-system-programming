@@ -1,4 +1,4 @@
-package instruction;
+package root.instruction;
 
 import root.Constants;
 import root.VirtualMachine;
