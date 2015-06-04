@@ -13,7 +13,7 @@ public class InstLDCH extends SICXEInstruction {
 
     @Override
     public void Execute(VirtualMachine virtualMachine) {
-        int address = getDestAddress(virtualMachine);
+        int address = getDestAddress(virtualMachine) + virtualMachine.getRegister(Constants.REGISTER_X);
         int value = 0;
 
         if( isSimple() ) {
