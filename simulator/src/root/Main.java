@@ -1,4 +1,4 @@
-import interfaces.SicSimulator;
+package root;
 
 import java.io.File;
 
@@ -25,8 +25,6 @@ public class Main {
 
         objectCodeLoader.setVirtualMachine(virtualMachine);
         objectCodeLoader.setCodeSimulator(codeSimulator);
-
-
         objectCodeLoader.load(new File("program_copy"));
     }
 }

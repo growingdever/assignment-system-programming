@@ -1,13 +1,15 @@
-import interfaces.VisualSimulator;
+package root;
+
+import root.interfaces.VisualSimulator;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultCaret;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 import java.awt.*;
 import java.io.File;
-import java.util.HashMap;
 
 /**
  * Created by loki on 15. 5. 28..
@@ -136,6 +138,8 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         textAreaMemoryDump.setAutoscrolls(true);
         textAreaMemoryDump.setFont(new Font("Courier", Font.TRUETYPE_FONT, 14));
         textAreaMemoryDump.setEditable(false);
+        DefaultCaret caret = (DefaultCaret) textAreaMemoryDump.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
         JScrollPane scrollPane = new JScrollPane(textAreaMemoryDump);
         scrollPane.setPreferredSize(new Dimension(400, 300));
@@ -176,11 +180,12 @@ public class GUISimulator extends JFrame implements VisualSimulator {
     }
 
     public void updateRegisters(int[] registers) {
-        labelRegisterA.setValue(registers[0]);
-        labelRegisterX.setValue(registers[1]);
-        labelRegisterL.setValue(registers[2]);
-        labelRegisterPC.setValue(registers[8]);
-        labelRegisterSW.setValue(registers[9]);
+        labelRegisterA.setValue(registers[Constants.REGISTER_A]);
+        labelRegisterX.setValue(registers[Constants.REGISTER_X]);
+        labelRegisterL.setValue(registers[Constants.REGISTER_L]);
+        labelRegisterPC.setValue(registers[Constants.REGISTER_PC]
+                + codeSimulator.calculateInstructionSize(registers[Constants.REGISTER_PC]));
+        labelRegisterSW.setValue(registers[Constants.REGISTER_SW]);
     }
 
     public void updateProgramInformation(String programName, int programLength) {
@@ -212,10 +217,12 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         Highlighter highlighter = textAreaMemoryDump.getHighlighter();
         highlighter.removeAllHighlights();
         try {
-            int start = virtualMachine.getCurrMemoryIndex() * 2;
-            start += start / 8;
-            int end = virtualMachine.getCurrMemoryIndex() * 2 + virtualMachine.getCurrInstructionSize() * 2;
+            int end = (virtualMachine.getRegisterPC() + codeSimulator.calculateInstructionSize(virtualMachine.getRegisterPC())) * 2;
             end += end / 8;
+
+            int start = virtualMachine.getRegisterPC() * 2;
+            start += start / 8;
+
             highlighter.addHighlight(start,
                     end,
                     DefaultHighlighter.DefaultPainter);

@@ -1,4 +1,4 @@
-package interfaces;
+package root.interfaces;
 
 import java.io.File;
 

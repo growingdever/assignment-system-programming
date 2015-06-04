@@ -1,4 +1,6 @@
-import interfaces.ResourceManager;
+package root;
+
+import root.interfaces.ResourceManager;
 
 /**
  * Created by loki on 15. 6. 3..
@@ -13,7 +15,6 @@ public class VirtualMachine implements ResourceManager {
     private byte[] memory;
     private int lastMemoryAddress;
     private String programName;
-    private int currMemoryIndex;
     private int currInstructionSize;
 
 
@@ -102,13 +103,20 @@ public class VirtualMachine implements ResourceManager {
         this.programName = programName;
     }
 
-    public int getCurrMemoryIndex() {
-        return currMemoryIndex;
+    public int getRegisterPC() {
+        return registers[Constants.REGISTER_PC];
     }
 
-    public void setCurrMemoryIndex(int currMemoryIndex) {
-        this.currMemoryIndex = currMemoryIndex;
-        registers[8] = currMemoryIndex + currInstructionSize;
+    public int getCurrMemoryIndex() {
+        return registers[Constants.REGISTER_PC] - currInstructionSize;
+    }
+
+//    public void setCurrMemoryIndex(int currMemoryIndex) {
+//        registers[Constants.REGISTER_PC] = currMemoryIndex + currInstructionSize;
+//    }
+
+    public void moveToNextPC() {
+        registers[Constants.REGISTER_PC] += currInstructionSize;
     }
 
     public int getCurrInstructionSize() {
@@ -117,6 +125,24 @@ public class VirtualMachine implements ResourceManager {
 
     public void setCurrInstructionSize(int currInstructionSize) {
         this.currInstructionSize = currInstructionSize;
-        registers[8] = currMemoryIndex + currInstructionSize;
+        registers[Constants.REGISTER_PC] = getCurrMemoryIndex() + currInstructionSize;
+    }
+
+    public void printMemoryDump() {
+        for(int i = 0; i < memory.length; i ++) {
+            if( i % 4 == 0 && i > 0 ) {
+                System.out.print(" ");
+            }
+            if( i % 16 == 0 && i > 0 ) {
+                System.out.println();
+            }
+
+            char c1 = (char) ((memory[i] & 0x000000F0) >> 4);
+            char c2 = (char) (memory[i] & 0x0000000F);
+
+            System.out.print(Util.digitToHex(c1));
+            System.out.print(Util.digitToHex(c2));
+        }
+
     }
 }

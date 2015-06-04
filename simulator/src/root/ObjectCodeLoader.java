@@ -1,11 +1,9 @@
-import interfaces.ResourceManager;
-import interfaces.SicLoader;
-import interfaces.SicSimulator;
-import interfaces.VisualSimulator;
+package root;
+
+import root.interfaces.SicLoader;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -49,22 +47,6 @@ public class ObjectCodeLoader implements SicLoader {
         }
 
         linking();
-
-        byte[] bytes = virtualMachine.getMemory(0, 8192);
-        for(int i = 0; i < bytes.length; i ++) {
-            if( i % 4 == 0 && i > 0 ) {
-                System.out.print(" ");
-            }
-            if( i % 16 == 0 && i > 0 ) {
-                System.out.println();
-            }
-
-            char c1 = (char) ((bytes[i] & 0x000000F0) >> 4);
-            char c2 = (char) (bytes[i] & 0x0000000F);
-
-            System.out.print(Util.digitToHex(c1));
-            System.out.print(Util.digitToHex(c2));
-        }
 
         virtualMachine.affectVisualSimulator();
     }

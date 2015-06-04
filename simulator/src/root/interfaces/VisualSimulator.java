@@ -1,4 +1,4 @@
-package interfaces;
+package root.interfaces;
 
 /**
  * Created by loki on 15. 6. 3..
