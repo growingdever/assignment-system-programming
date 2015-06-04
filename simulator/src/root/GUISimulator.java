@@ -217,7 +217,7 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         highlighter.removeAllHighlights();
         try {
             int start = virtualMachine.getRegisterPC() * 2;
-            int end = (virtualMachine.getRegisterPC() + virtualMachine.getCurrInstructionSize()) * 2;
+            int end = (virtualMachine.getRegisterPC() + codeSimulator.calculateInstructionSize(virtualMachine.getRegisterPC())) * 2;
             start += start / 8;
             end += end / 8;
 

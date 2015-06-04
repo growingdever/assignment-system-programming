@@ -40,6 +40,14 @@ public abstract class SICXEInstruction {
         return bytes;
     }
 
+    public int getRegisterValue1() {
+        return (bytes[1] & 0x000000F0) >> 4;
+    }
+
+    public int getRegisterValue2() {
+        return bytes[1] & 0x0000000F;
+    }
+
     public int getDestAddress(VirtualMachine virtualMachine) {
         if( isExtended ) {
             int address = 0;

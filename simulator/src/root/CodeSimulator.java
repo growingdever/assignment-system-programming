@@ -1,5 +1,6 @@
 package root;
 
+import instruction.InstCLEAR;
 import root.instruction.*;
 import root.interfaces.SicSimulator;
 
@@ -73,6 +74,9 @@ public class CodeSimulator implements SicSimulator {
                 break;
             case 0x48:
                 instruction = new InstJSUB(wholeBytes, isExtended);
+                break;
+            case 0xB4:
+                instruction = new InstCLEAR(wholeBytes, isExtended);
                 break;
         }
 
