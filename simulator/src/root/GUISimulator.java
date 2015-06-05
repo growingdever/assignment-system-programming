@@ -26,6 +26,9 @@ public class GUISimulator extends JFrame implements VisualSimulator {
     private JLabel labelProgramLength;
     private JLabel labelCurrInstruction;
 
+    private JTextField textFieldDevice1;
+    private JTextField textFieldDevice2;
+
     private JLabelRegisterValue labelRegisterA;
     private JLabelRegisterValue labelRegisterX;
     private JLabelRegisterValue labelRegisterL;
@@ -50,7 +53,7 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         setContentPane(rootPanel);
 
         addControlButtons();
-        addProgramInfomations();
+        addProgramInformation();
         addRegisterValueLabels();
         addMemoryDumps();
     }
@@ -85,11 +88,14 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         panelControlButtons.add(buttonStepAll);
     }
 
-    private void addProgramInfomations() {
+    private void addProgramInformation() {
         JPanel panel = new JPanel();
+        rootPanel.add(panel, BorderLayout.WEST);
+
         panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
-        rootPanel.add(panel, BorderLayout.WEST);
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.setPreferredSize(new Dimension(200, 100));
 
         labelProgramName = new JLabel("PROGRAM NAME");
         labelProgramName.setPreferredSize(new Dimension(150, 20));
@@ -102,6 +108,40 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         labelCurrInstruction = new JLabel("CURRENT INSTRUCTION");
         labelCurrInstruction.setPreferredSize(new Dimension(150, 20));
         panel.add(labelCurrInstruction);
+
+
+        JPanel panelDevices = new JPanel();
+        panel.add(panelDevices);
+
+        panelDevices.setLayout(new BoxLayout(panelDevices, BoxLayout.PAGE_AXIS));
+        panelDevices.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panelDevices.setPreferredSize(new Dimension(200, 100));
+
+        JPanel panelDevice1 = new JPanel();
+        panelDevice1.setPreferredSize(new Dimension(200, 40));
+        panelDevice1.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panelDevices.add(panelDevice1);
+
+        panelDevice1.add(new JLabel("Device1"));
+        textFieldDevice1 = new JTextField("F1", 5);
+        panelDevice1.add(textFieldDevice1);
+
+        JPanel panelDevice2 = new JPanel();
+        panelDevice2.setPreferredSize(new Dimension(200, 40));
+        panelDevice2.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panelDevices.add(panelDevice2);
+
+        panelDevice2.add(new JLabel("Device2"));
+        textFieldDevice2 = new JTextField("05", 5);
+        panelDevice2.add(textFieldDevice2);
+
+        JButton buttonInitDevices = new JButton("Initialize devices");
+        panelDevice2.add(buttonInitDevices);
+        buttonInitDevices.addActionListener(e -> {
+
+        });
+
+        panelDevices.add(Box.createRigidArea(new Dimension(5, 200)));
     }
 
     private void addRegisterValueLabels() {
