@@ -26,6 +26,7 @@ public class VirtualMachine implements ResourceManager {
     public VirtualMachine() {
         initializeMemory();
         initializeRegister();
+        initialDevices();
     }
 
     @Override
