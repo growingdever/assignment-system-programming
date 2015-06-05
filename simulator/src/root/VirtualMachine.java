@@ -43,6 +43,10 @@ public class VirtualMachine implements ResourceManager {
         }
     }
 
+    public void initialDevices() {
+        devices = new HashMap<>();
+    }
+
     @Override
     public void initialDevice(String devName) {
         File dir = new File("./dev");
@@ -134,10 +138,6 @@ public class VirtualMachine implements ResourceManager {
     public int getCurrMemoryIndex() {
         return registers[Constants.REGISTER_PC] - currInstructionSize;
     }
-
-//    public void setCurrMemoryIndex(int currMemoryIndex) {
-//        registers[Constants.REGISTER_PC] = currMemoryIndex + currInstructionSize;
-//    }
 
     public void moveToNextPC() {
         registers[Constants.REGISTER_PC] += currInstructionSize;

@@ -70,10 +70,17 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         buttonLoadProgram.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser();
             if (fileChooser.showOpenDialog(GUISimulator.this) == JFileChooser.APPROVE_OPTION) {
+                virtualMachine.initializeMemory();
+                virtualMachine.initializeRegister();
+                virtualMachine.initialDevices();
+
+                textAreaLogs.setText(null);
+
+                codeSimulator.initialize();
+
                 String filename = fileChooser.getSelectedFile().getName();
                 String dir = fileChooser.getCurrentDirectory().toString();
                 objectCodeLoader.load(new File(dir + "/" + filename));
-                codeSimulator.initialize();
             }
         });
         panelControlButtons.add(buttonLoadProgram);

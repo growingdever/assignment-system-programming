@@ -36,7 +36,6 @@ public class CodeSimulator implements SicSimulator {
     }
 
     public int calculateInstructionSize(int location) {
-        byte secondByte = virtualMachine.getMemory(location + 1, 1)[0];
         boolean isExtended = isExtendedInstruction(location);
 
         int opcode = getOpCode(location);

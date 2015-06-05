@@ -19,18 +19,19 @@ public class ObjectCodeLoader implements SicLoader {
 
     private String currSectionName;
     private int currSectionStartAddress;
-    private int next;
 
     HashMap<String, ArrayList<LinkingOperation>> linkingOperations;
     HashMap<String, Integer> symbolTable;
 
     public ObjectCodeLoader() {
-        linkingOperations = new HashMap<>();
-        symbolTable = new HashMap<>();
+
     }
 
     @Override
     public void load(File objFile) {
+        linkingOperations = new HashMap<>();
+        symbolTable = new HashMap<>();
+
         Scanner scanner;
         try {
             scanner = new Scanner(objFile);
