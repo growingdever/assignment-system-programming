@@ -202,7 +202,7 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         textAreaLogs = new JTextArea();
         textAreaLogs.setAutoscrolls(true);
         textAreaLogs.setFont(new Font("Courier", Font.TRUETYPE_FONT, 14));
-//        textAreaLogs.setEditable(false);
+        textAreaLogs.setEditable(false);
         DefaultCaret caret = (DefaultCaret) textAreaLogs.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
