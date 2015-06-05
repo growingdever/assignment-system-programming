@@ -21,7 +21,6 @@ public class GUISimulator extends JFrame implements VisualSimulator {
     private ObjectCodeLoader objectCodeLoader;
 
     private JPanel rootPanel;
-    private JList<String> listAssemblies;
 
     private JLabel labelProgramName;
     private JLabel labelProgramLength;
@@ -50,29 +49,10 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         rootPanel.setLayout(new BorderLayout());
         setContentPane(rootPanel);
 
-        addAssemblyList();
         addControlButtons();
         addProgramInfomations();
         addRegisterValueLabels();
         addMemoryDumps();
-    }
-
-    private void addAssemblyList() {
-        String[] assemblies = new String[]{
-                "abc",
-                "abc",
-                "abc",
-                "abc",
-                "abc",
-        };
-        DefaultListModel<String> model = new DefaultListModel<>();
-        for (String str : assemblies) {
-            model.addElement(str);
-        }
-
-        listAssemblies = new JList<>(model);
-        listAssemblies.setPreferredSize(new Dimension(200, 400));
-        rootPanel.add(listAssemblies, BorderLayout.CENTER);
     }
 
     private void addControlButtons() {
@@ -162,9 +142,9 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
         JScrollPane scrollPane = new JScrollPane(textAreaMemoryDump);
-        scrollPane.setPreferredSize(new Dimension(400, 300));
+        scrollPane.setPreferredSize(new Dimension(300, 300));
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-        rootPanel.add(scrollPane, BorderLayout.SOUTH);
+        rootPanel.add(scrollPane, BorderLayout.CENTER);
     }
 
     @Override
