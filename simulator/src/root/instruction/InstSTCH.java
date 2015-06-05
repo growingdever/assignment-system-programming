@@ -13,7 +13,7 @@ public class InstSTCH extends SICXEInstruction {
 
     @Override
     public String execute(VirtualMachine virtualMachine) {
-        int address = getDestAddress(virtualMachine);
+        int address = getDestAddress(virtualMachine) + virtualMachine.getRegister(Constants.REGISTER_X);
         int regValue = virtualMachine.getRegister(Constants.REGISTER_A);
         virtualMachine.setMemory(address, getByteFromRegisterValue(regValue), 1);
 
