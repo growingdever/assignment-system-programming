@@ -12,8 +12,10 @@ public class InstCLEAR extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         int r = getRegisterNumber1();
         virtualMachine.setRegister(r, 0);
+
+        return String.format("register %d is now 0", r);
     }
 }

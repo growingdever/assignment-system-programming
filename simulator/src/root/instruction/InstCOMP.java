@@ -12,15 +12,21 @@ public class InstCOMP extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         int value = getValue(virtualMachine);
         int reg = virtualMachine.getRegister(Constants.REGISTER_A);
+
+        char c;
         if( reg < value ) {
-            virtualMachine.setRegister(Constants.REGISTER_SW, '<');
+            c = '<';
         } else if( reg > value ) {
-            virtualMachine.setRegister(Constants.REGISTER_SW, '>');
+            c = '>';
         } else {
-            virtualMachine.setRegister(Constants.REGISTER_SW, '=');
+            c = '=';
         }
+
+        virtualMachine.setRegister(Constants.REGISTER_SW, c);
+
+        return String.format("Register SW : %c", c);
     }
 }

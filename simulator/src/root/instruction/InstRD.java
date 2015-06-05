@@ -17,7 +17,7 @@ public class InstRD extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         int address = getDestAddress(virtualMachine);
         int size = 1;
         int val = bytesToInteger(virtualMachine.getMemory(address, size));
@@ -30,12 +30,16 @@ public class InstRD extends SICXEInstruction {
                 int b = fileInputStream.read();
                 if( b == -1 ){
                     virtualMachine.setRegister(Constants.REGISTER_A, 0);
+                    return "Read end of file";
                 } else {
                     virtualMachine.setRegister(Constants.REGISTER_A, b);
+                    return "Read : " + (char)b;
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+
+        return "Do nothing";
     }
 }

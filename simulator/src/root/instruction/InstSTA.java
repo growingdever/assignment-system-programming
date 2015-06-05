@@ -12,9 +12,11 @@ public class InstSTA extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         int address = getDestAddress(virtualMachine);
         int regValue = virtualMachine.getRegister(Constants.REGISTER_A);
         virtualMachine.setMemory(address, getByteFromRegisterValue(regValue), 3);
+
+        return String.format("Store registerA value %08X to M[%08X]", regValue, address);
     }
 }

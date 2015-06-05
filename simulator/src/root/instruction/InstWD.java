@@ -16,7 +16,7 @@ public class InstWD extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         int address = getDestAddress(virtualMachine);
         int size = 1;
         int val = bytesToInteger(virtualMachine.getMemory(address, size));
@@ -28,9 +28,13 @@ public class InstWD extends SICXEInstruction {
             try {
                 int b = virtualMachine.getRegister(Constants.REGISTER_A);
                 fileOutputStream.write(b);
+
+                return "Write to device : " + (char)b;
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+
+        return "Do nothing";
     }
 }

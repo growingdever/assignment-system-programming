@@ -12,7 +12,7 @@ public class InstTIXR extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         int r1 = getRegisterValue1(virtualMachine);
         int x = virtualMachine.getRegister(Constants.REGISTER_X);
         x ++;
@@ -27,6 +27,6 @@ public class InstTIXR extends SICXEInstruction {
             virtualMachine.setRegister(Constants.REGISTER_SW, '=');
         }
 
-
+        return String.format("Increase registerX, set registerSW to %c", (int)virtualMachine.getRegister(Constants.REGISTER_SW));
     }
 }

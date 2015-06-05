@@ -13,8 +13,10 @@ public class InstLDT extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         int val = getValue(virtualMachine);
         virtualMachine.setRegister(Constants.REGISTER_T, val);
+
+        return String.format("Register T is %08X", val);
     }
 }

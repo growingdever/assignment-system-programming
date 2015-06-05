@@ -12,16 +12,20 @@ public class InstCOMPR extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         int r1 = getRegisterValue1(virtualMachine);
         int r2 = getRegisterValue2(virtualMachine);
 
+        char c;
         if( r1 < r2 ) {
-            virtualMachine.setRegister(Constants.REGISTER_SW, '<');
+            c = '<';
         } else if( r1 > r2 ) {
-            virtualMachine.setRegister(Constants.REGISTER_SW, '>');
+            c = '>';
         } else {
-            virtualMachine.setRegister(Constants.REGISTER_SW, '=');
+            c = '=';
         }
+        virtualMachine.setRegister(Constants.REGISTER_SW, c);
+
+        return String.format("Register SW : %c", c);
     }
 }

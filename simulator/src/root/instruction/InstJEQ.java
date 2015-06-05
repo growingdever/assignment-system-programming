@@ -12,9 +12,12 @@ public class InstJEQ extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         if(virtualMachine.getRegister(Constants.REGISTER_SW) == '=') {
             virtualMachine.setRegister(Constants.REGISTER_PC, getDestAddress(virtualMachine));
+            return String.format("Jump to %08X", getDestAddress(virtualMachine));
         }
+
+        return "SW != \'=\'";
     }
 }

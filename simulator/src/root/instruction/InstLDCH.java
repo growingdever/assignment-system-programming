@@ -12,7 +12,7 @@ public class InstLDCH extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         int address = getDestAddress(virtualMachine) + virtualMachine.getRegister(Constants.REGISTER_X);
         int value = 0;
 
@@ -27,5 +27,6 @@ public class InstLDCH extends SICXEInstruction {
         }
 
         virtualMachine.setRegister(Constants.REGISTER_A, value);
+        return String.format("Register A is %08X", value);
     }
 }

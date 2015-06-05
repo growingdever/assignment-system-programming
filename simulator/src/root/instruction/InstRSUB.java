@@ -12,8 +12,10 @@ public class InstRSUB extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         int next = virtualMachine.getRegister(Constants.REGISTER_L);
         virtualMachine.setRegister(Constants.REGISTER_PC, next);
+
+        return String.format("RSUB : Jump to %08X", next);
     }
 }

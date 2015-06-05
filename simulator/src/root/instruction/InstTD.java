@@ -14,7 +14,7 @@ public class InstTD extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         int address = getDestAddress(virtualMachine);
         int size = 1;
         int val = bytesToInteger(virtualMachine.getMemory(address, size));
@@ -23,8 +23,10 @@ public class InstTD extends SICXEInstruction {
         File file = virtualMachine.getDevice(deviceName).getFile();
         if( file.canWrite() && file.canRead() ) {
             virtualMachine.setRegister(Constants.REGISTER_SW, '<');
+            return "Test Device - Valid";
         } else {
             virtualMachine.setRegister(Constants.REGISTER_SW, '=');
+            return "Test Device - Invalid";
         }
     }
 }

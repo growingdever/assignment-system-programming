@@ -16,7 +16,7 @@ public class CodeSimulator implements SicSimulator {
     private GUISimulator guiSimulator;
     private InstructionTable instructionTable;
     private InstructionData currInstruction;
-
+    private String lastLog = "";
 
     public CodeSimulator() {
         instructionTable = new InstructionTable();
@@ -32,6 +32,7 @@ public class CodeSimulator implements SicSimulator {
     }
 
     public void initialize() {
+        lastLog = "";
     }
 
     public int calculateInstructionSize(int location) {
@@ -139,7 +140,7 @@ public class CodeSimulator implements SicSimulator {
 
         if (instruction != null) {
             virtualMachine.moveToNextPC();
-            instruction.Execute(virtualMachine);
+            lastLog = instruction.execute(virtualMachine);
             currInstruction = instructionTable.FindInstructionDataByOpCode(opcode);
         }
 
@@ -169,5 +170,9 @@ public class CodeSimulator implements SicSimulator {
     @Override
     public void addLog() {
 
+    }
+
+    public String getLastLog() {
+        return lastLog;
     }
 }

@@ -41,6 +41,8 @@ public class GUISimulator extends JFrame implements VisualSimulator {
 
     private JTextArea textAreaMemoryDump;
 
+    private JTextArea textAreaLogs;
+
 
     public GUISimulator() {
         super("SIC/XE Simulator");
@@ -56,6 +58,7 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         addProgramInformation();
         addRegisterValueLabels();
         addMemoryDumps();
+        addLogs();
     }
 
     private void addControlButtons() {
@@ -188,6 +191,20 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         rootPanel.add(scrollPane, BorderLayout.CENTER);
     }
 
+    private void addLogs() {
+        textAreaLogs = new JTextArea();
+        textAreaLogs.setAutoscrolls(true);
+        textAreaLogs.setFont(new Font("Courier", Font.TRUETYPE_FONT, 14));
+//        textAreaLogs.setEditable(false);
+        DefaultCaret caret = (DefaultCaret) textAreaLogs.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
+        JScrollPane scrollPane = new JScrollPane(textAreaLogs);
+        scrollPane.setPreferredSize(new Dimension(300, 100));
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        rootPanel.add(scrollPane, BorderLayout.SOUTH);
+    }
+
     @Override
     public void initialize() {
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -276,6 +293,16 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         } catch (BadLocationException e) {
             e.printStackTrace();
         }
+    }
+
+    public void updateLogs() {
+        String newLog = textAreaLogs.getText() + "\n" + codeSimulator.getLastLog();
+        if( textAreaLogs.getText().equals("") ) {
+            newLog = codeSimulator.getLastLog();
+        }
+
+        textAreaLogs.setText(newLog);
+        textAreaLogs.setCaretPosition(newLog.length());
     }
 
 }

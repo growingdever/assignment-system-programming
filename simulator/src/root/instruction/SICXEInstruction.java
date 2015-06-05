@@ -120,5 +120,5 @@ public abstract class SICXEInstruction {
         return bytes.length;
     }
 
-    public abstract void Execute(VirtualMachine virtualMachine);
+    public abstract String execute(VirtualMachine virtualMachine);
 }

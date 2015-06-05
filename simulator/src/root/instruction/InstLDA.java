@@ -12,8 +12,10 @@ public class InstLDA extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         int val = getValue(virtualMachine);
         virtualMachine.setRegister(Constants.REGISTER_A, val);
+
+        return String.format("Register A is %08X", val);
     }
 }

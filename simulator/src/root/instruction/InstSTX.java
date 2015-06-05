@@ -12,9 +12,11 @@ public class InstSTX extends SICXEInstruction {
     }
 
     @Override
-    public void Execute(VirtualMachine virtualMachine) {
+    public String execute(VirtualMachine virtualMachine) {
         int address = getDestAddress(virtualMachine);
         int regValue = virtualMachine.getRegister(Constants.REGISTER_X);
         virtualMachine.setMemory(address, getByteFromRegisterValue(regValue), 3);
+
+        return String.format("Store registerX value %08X to M[%08X]", regValue, address);
     }
 }
