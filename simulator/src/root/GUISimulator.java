@@ -302,10 +302,10 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         }
     }
 
-    public void updateLogs() {
-        String newLog = textAreaLogs.getText() + "\n" + codeSimulator.getLastLog();
+    public void updateLogs(String log) {
+        String newLog = textAreaLogs.getText() + "\n" + log;
         if( textAreaLogs.getText().equals("") ) {
-            newLog = codeSimulator.getLastLog();
+            newLog = log;
         }
 
         textAreaLogs.setText(newLog);

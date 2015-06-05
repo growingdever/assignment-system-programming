@@ -144,6 +144,7 @@ public class CodeSimulator implements SicSimulator {
         }
 
         virtualMachine.affectVisualSimulator();
+        addLog();
     }
 
     @Override
@@ -168,7 +169,7 @@ public class CodeSimulator implements SicSimulator {
 
     @Override
     public void addLog() {
-
+        guiSimulator.updateLogs(lastLog);
     }
 
     public String getLastLog() {

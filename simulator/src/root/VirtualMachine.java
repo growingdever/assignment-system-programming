@@ -106,7 +106,6 @@ public class VirtualMachine implements ResourceManager {
         guiSimulator.updateRegisters(this.registers);
         guiSimulator.updateProgramInformation(programName, lastMemoryAddress);
         guiSimulator.updateMemoryDump();
-        guiSimulator.updateLogs();
     }
 
     public int reserveMemory(int size) {
