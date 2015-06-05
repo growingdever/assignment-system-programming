@@ -5,6 +5,8 @@ import root.instruction.InstLDT;
 import root.instruction.*;
 import root.interfaces.SicSimulator;
 
+import java.util.logging.Handler;
+
 /**
  * Created by loki on 15. 5. 29..
  */
@@ -146,9 +148,22 @@ public class CodeSimulator implements SicSimulator {
 
     @Override
     public void allStep() {
-        for( int i = 0 ; i < 50; i ++ ) {
-            oneStep();
-        }
+        Runnable runnable = () -> {
+            while(true) {
+                oneStep();
+
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                if( virtualMachine.getRegisterPC() == 0 ) {
+                    break;
+                }
+            }
+        };
+        new Thread(runnable).start();
     }
 
     @Override

@@ -45,7 +45,10 @@ public class VirtualMachine implements ResourceManager {
 
     @Override
     public void initialDevice(String devName) {
-        File file = new File(devName);
+        File dir = new File("./dev");
+        dir.mkdir();
+
+        File file = new File("./dev/" + devName);
         if( ! file.exists() ) {
             try {
                 file.createNewFile();

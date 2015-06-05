@@ -28,8 +28,6 @@ public class InstWD extends SICXEInstruction {
             try {
                 int b = virtualMachine.getRegister(Constants.REGISTER_A);
                 fileOutputStream.write(b);
-
-                System.out.println(String.format("write : %c", b));
             } catch (IOException e) {
                 e.printStackTrace();
             }

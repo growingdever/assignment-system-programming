@@ -75,7 +75,7 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         });
         panelControlButtons.add(buttonLoadProgram);
 
-        JButton buttonStepOnce = new JButton("Step");
+        JButton buttonStepOnce = new JButton("Step Once");
         buttonStepOnce.addActionListener(e -> {
             oneStep();
         });
@@ -136,9 +136,10 @@ public class GUISimulator extends JFrame implements VisualSimulator {
         panelDevice2.add(textFieldDevice2);
 
         JButton buttonInitDevices = new JButton("Initialize devices");
-        panelDevice2.add(buttonInitDevices);
+        panelDevices.add(buttonInitDevices);
         buttonInitDevices.addActionListener(e -> {
-
+            virtualMachine.initialDevice(textFieldDevice1.getText());
+            virtualMachine.initialDevice(textFieldDevice2.getText());
         });
 
         panelDevices.add(Box.createRigidArea(new Dimension(5, 200)));
