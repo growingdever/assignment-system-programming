@@ -1,8 +1,12 @@
 from __future__ import print_function
-import re
 from SourceToken import *
 from Symbol import *
 from ObjectCode import *
+import re
+import sys
+if sys.version_info < (3, ):
+    from __builtin__ import xrange as range
+
 
 SIZE_OF_WORD = 3
 PATH_INSTRUCTION_DATA = 'inst.data'
@@ -86,7 +90,7 @@ def generate_literals():
 
     control_section_num = 0
     num_of_ltorg = 0
-    for i in xrange(0, len(source_tokens)):
+    for i in range(0, len(source_tokens)):
         token = source_tokens[i]
         if token.operator == 'START' or token.operator == 'CSECT':
             control_section_num += 1
@@ -115,7 +119,7 @@ def generate_literals():
     last = 0
     for target_index in generate_target_position:
         new_tokens = []
-        for i in xrange(last, len(literals)):
+        for i in range(last, len(literals)):
             pair = literals[i]
             if pair[1] < target_index[0]:
                 literal = pair[0]
@@ -185,7 +189,7 @@ def increase_location_counter_by_token(token):
         return 0
 
     instruction_data = instruction_table[token.operator]
-    for i in xrange(1, 4):
+    for i in range(1, 4):
         if str(i) in instruction_data[1]:
             return i
 
@@ -218,7 +222,7 @@ def add_all_symbols():
 def get_address_of_symbol(str_symbol, control_section_number):
     for symbol in symbol_table:
         if symbol.is_same(str_symbol, control_section_number):
-            return symbol.address
+            return int(symbol.address)
     return -1
 
 
@@ -249,14 +253,14 @@ def calculate_object_code_byte(token):
         left = 2
         right = len(operand) - 2
         length = right - left + 1
-        for i in xrange(left, right + 1):
+        for i in range(left, right + 1):
             c = ord(operand[i])
             code += c << (8 * abs(i - right))
     elif operand[0] == 'X':
         left = 2
         right = 3
         length = 1
-        for i in xrange(left, right + 1):
+        for i in range(left, right + 1):
             c = ord(operand[i])
             tmp = 0
             if c > ord('9'):
@@ -483,7 +487,7 @@ def print_object_codes():
             length = 0
             text_record = ''
             start_address = texts[0].address
-            for i in xrange(0, len(texts)):
+            for i in range(0, len(texts)):
                 object_code = texts[i]
 
                 expr = '%%0%dX' % (object_code.size * 2)
@@ -504,7 +508,7 @@ def print_object_codes():
                 text_record = ''
                 start_address = literals[0].address
 
-                for i in xrange(0, len(literals)):
+                for i in range(0, len(literals)):
                     object_code = literals[i]
 
                     expr = '%%0%dX' % (object_code.size * 2)
